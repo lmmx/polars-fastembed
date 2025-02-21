@@ -8,7 +8,8 @@ use crate::model_suggestions::from_model_code;
 #[derive(Deserialize)]
 pub struct EmbedTextKwargs {
     /// The name/id of the model to load from Hugging Face or local ONNX
-    pub model_id: String,
+    #[serde(default)]
+    pub model_id: Option<String>,
 }
 
 fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
@@ -24,7 +25,6 @@ fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
 pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Series> {
     // 1) Grab the input Series
     let s = &inputs[0];
-    let chosen_model = from_model_code(&kwargs.model_id)?;
 
     // 2) Check it's a String column
     if s.dtype() != &DataType::String {
@@ -35,11 +35,17 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
     let ca = s.str()?; // Polars string chunked array
 
     // 3) Initialize the fastembed text model
-    let embedder = TextEmbedding::try_new(
-        InitOptions::new(chosen_model)
-            .with_show_download_progress(false)
-    ).map_err(|e| PolarsError::ComputeError(
-        format!("Failed to load model {}: {e}", kwargs.model_id).into()
+    let embedder = match &kwargs.model_id {
+        // If user explicitly passed a model_id, do your from_model_code logic:
+        Some(model_id) => {
+            let chosen_model = from_model_code(model_id)?;
+            TextEmbedding::try_new(InitOptions::new(chosen_model).with_show_download_progress(false))
+        }
+        // If user did NOT pass one at all, rely on fastembed-rs's default
+        None => TextEmbedding::try_new(InitOptions::default().with_show_download_progress(false)),
+    }
+    .map_err(|e| PolarsError::ComputeError(
+        format!("Failed to load model: {e}").into()
     ))?;
 
     // 4) Embed row-by-row (or do batching for performance)

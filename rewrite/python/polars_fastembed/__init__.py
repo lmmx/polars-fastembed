@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 # Determine the correct plugin path (like your `lib` variable).
 if parse_version(pl.__version__) < parse_version("0.20.16"):
     from polars.utils.udfs import _get_shared_lib_location
+
     lib: str | Path = _get_shared_lib_location(__file__)
 else:
     lib = Path(__file__).parent
@@ -38,9 +39,9 @@ def plug(expr: IntoExpr, **kwargs) -> pl.Expr:
     )
 
 
-def embed_text(expr: IntoExpr, *, model_id: str) -> pl.Expr:
+def embed_text(expr: IntoExpr, *, model_id: str | None = None) -> pl.Expr:
     """
     Calls the Rust `embed_text` expression from `_polars_fastembed`.
-    We pass `model_id` as a kwarg to the Rust side.
+    We pass `model_id` as a kwarg to the Rust side if it was set.
     """
-    return plug(expr, model_id=model_id)
+    return plug(expr, **{"model_id": model_id})

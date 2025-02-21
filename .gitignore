@@ -12,3 +12,5 @@ wheels/
 *.swp
 .cache/
 target
+
+.fastembed_cache

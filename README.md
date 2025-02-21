@@ -7,4 +7,4 @@ A Polars plugin for embedding DataFrames
 This repo contains 2 subdirectories:
 
 - `original` - the Python version, working
-- `rust` - the Rust rewrite, aiming to be faster than the original
+- `rewrite` - the Rust rewrite, aiming to be faster than the original

@@ -1,0 +1,25 @@
+[package]
+name = "polars_fastembed"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core bridging from Rust to Python
+pyo3 = { version = "0.21.2", features = ["extension-module", "abi3-py38"] }
+
+# Polars (Rust)
+polars = { version = "0.39.2", default-features = false }
+
+# pyo3-polars for Polars plugin macros (#[polars_expr] etc.)
+pyo3-polars = { version = "0.13.0", features = ["derive"] }
+
+# For parsing function kwargs in your expression
+serde = { version = "1.0", features = ["derive"] }
+
+# FastEmbed-rs for text embedding
+fastembed = "4"
+
+[lib]
+name = "_polars_fastembed"
+crate-type = ["cdylib"]
+path = "src/lib.rs"

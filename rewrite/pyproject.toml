@@ -1,0 +1,18 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0", "polars>=0.20.6"]
+build-backend = "maturin"
+
+[project]
+name = "polars_fastembed"
+version = "0.1.0"
+description = "Rust-based Polars plugin for text embeddings (fastembed-rs)"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation ::CPython",
+]
+
+[tool.maturin]
+# The module name must match the `lib.name` from Cargo.toml
+module-name = "polars_fastembed._polars_fastembed"
+python-source = "python"

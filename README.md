@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/pypi/l/polars-fastembed.svg)](https://pypi.python.org/pypi/polars-fastembed)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/lmmx/polars-fastembed/master.svg)](https://results.pre-commit.ci/latest/github/lmmx/polars-fastembed/master)
 
-A Polars plugin for using embeddings on DataFrames
+A Polars plugin for embedding DataFrames
 
 ## Installation
 

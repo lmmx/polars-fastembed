@@ -2566,6 +2566,7 @@ version = "0.1.0"
 dependencies = [
  "fastembed",
  "polars",
+ "polars-arrow",
  "pyo3",
  "pyo3-polars",
  "serde",

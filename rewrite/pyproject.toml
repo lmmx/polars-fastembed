@@ -28,3 +28,5 @@ dev = [
 # The module name must match the `lib.name` from Cargo.toml
 module-name = "polars_fastembed._polars_fastembed"
 python-source = "python"
+release = true
+strip = true

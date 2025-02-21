@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 pyo3 = { version = "0.23.4", features = ["extension-module", "abi3-py38"] }
 polars = { version = "0.46.0", default-features = false }
+polars-arrow = { version = "0.46.0", default-features = false }
 pyo3-polars = { version = "0.20.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 fastembed = "4"
@@ -14,3 +15,25 @@ fastembed = "4"
 name = "_polars_fastembed"
 crate-type = ["cdylib"]
 path = "src/lib.rs"
+
+[profile.release]
+# Equivalent to `-C opt-level=2`
+opt-level = 2
+
+# Equivalent to `-C lto=thin`
+lto = "thin"
+
+# Equivalent to `-C codegen-units=1`
+codegen-units = 1
+
+# Equivalent to `-C panic=abort`
+panic = "abort"
+
+# Equivalent to `-C debuginfo=0`
+# (i.e. no debug info).
+debug = false
+
+# Equivalent to `-C strip=all`
+# (available in Cargo 1.68+).
+# Strips both debug info and symbol table.
+strip = "symbols"

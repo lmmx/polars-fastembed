@@ -14,7 +14,7 @@ pub struct EmbedTextKwargs {
 
 fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
     Ok(Field::new(
-        input_fields[0].name.clone().as_str(),
+        input_fields[0].name.clone(),
         DataType::List(Box::new(DataType::Float32))
     ))
 }
@@ -84,7 +84,7 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
 
             // 5) Convert Vec<Option<Vec<f32>>> to a Polars List(Float32) column
             let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
-                "embedding",
+                "embedding".into(),
                 row_embeddings.len(),
                 0,
                 DataType::Float32,

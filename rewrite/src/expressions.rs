@@ -1,9 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
-use fastembed::{TextEmbedding, InitOptions};
 
-use crate::model_suggestions::from_model_code;
+use crate::registry::get_or_load_model;
 
 #[derive(Deserialize)]
 pub struct EmbedTextKwargs {
@@ -32,23 +31,13 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
             format!("Data type {:?} not supported. Must be a String column.", s.dtype())
         );
     }
+
+    // Look up or load the requested model (or the "default" if None)
+    let embedder = get_or_load_model(&kwargs.model_id)?;
+
     let ca = s.str()?; // Polars string chunked array
 
-    // 3) Initialize the fastembed text model
-    let embedder = match &kwargs.model_id {
-        // If user explicitly passed a model_id, do your from_model_code logic:
-        Some(model_id) => {
-            let chosen_model = from_model_code(model_id)?;
-            TextEmbedding::try_new(InitOptions::new(chosen_model).with_show_download_progress(false))
-        }
-        // If user did NOT pass one at all, rely on fastembed-rs's default
-        None => TextEmbedding::try_new(InitOptions::default().with_show_download_progress(false)),
-    }
-    .map_err(|e| PolarsError::ComputeError(
-        format!("Failed to load model: {e}").into()
-    ))?;
-
-    // 4) Embed row-by-row (or do batching for performance)
+    // Embed row-by-row (TODO: batch for performance)
     let mut row_embeddings = Vec::with_capacity(ca.len());
     for opt_str in ca.into_iter() {
         if let Some(text) = opt_str {

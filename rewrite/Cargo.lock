@@ -2565,6 +2565,7 @@ name = "polars_fastembed"
 version = "0.1.0"
 dependencies = [
  "fastembed",
+ "once_cell",
  "polars",
  "polars-arrow",
  "pyo3",

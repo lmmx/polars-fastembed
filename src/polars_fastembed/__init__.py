@@ -86,8 +86,11 @@ class FastEmbedPlugin:
             # emb is a numpy.ndarray (e.g. shape [384] for bge-small)
             embeddings.append(emb.tolist())
 
-        # Convert embeddings into a Polars Series of type list
-        embedding_series = pl.Series(output_column, embeddings)
+        emb_size = len(emb)
+        array_dtype = pl.Array(pl.Float64, width=emb_size)
+
+        # Convert embeddings into a Polars Series of type Array[emb_size]
+        embedding_series = pl.Series(output_column, embeddings, dtype=array_dtype)
         return self._df.with_columns(embedding_series)
 
     def retrieve(

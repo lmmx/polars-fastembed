@@ -1,33 +1,27 @@
-# Polars SBERT
+# Polars FastEmbed
+
+<!-- [![downloads](https://static.pepy.tech/badge/polars-fastembed/month)](https://pepy.tech/project/polars-fastembed) -->
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
+[![PyPI](https://img.shields.io/pypi/v/polars-fastembed.svg)](https://pypi.org/project/polars-fastembed)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/polars-fastembed.svg)](https://pypi.org/project/polars-fastembed)
+[![License](https://img.shields.io/pypi/l/polars-fastembed.svg)](https://pypi.python.org/pypi/polars-fastembed)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/lmmx/polars-fastembed/master.svg)](https://results.pre-commit.ci/latest/github/lmmx/polars-fastembed/master)
 
 A Polars plugin for using embeddings on DataFrames
 
 ## Installation
 
-Install the full Polars extra and CUDA 12.4-based PyTorch (`cu124`):
 ```bash
-pip install "polars-sentence-transformers[polars,cu124]"
+pip install polars-fastembed
 ```
 
-On older CPUs install `polars-lts-cpu` 
-
-```bash
-pip install polars-sentence-transformers[polars-lts-cpu]
-```
-
-and for CPU-only PyTorch use the `cpu-only` extra:
-```bash
-pip install polars-sentence-transformers[cpu-only]
-```
-
-## Problems
-
-A quick profiling shows that this spends 90% of its time importing the sentence transformers
-dependency, making it a serious burden to use. I'm going to investigate alternatives:
-
-- [text-embeddings-inference](https://github.com/huggingface/text-embeddings-inference)
-- [fastembed](https://github.com/qdrant/fastembed) //
-  [fastembed-rs](https://github.com/Anush008/fastembed-rs)
+> The `polars` dependency is required but not included in the package by default.
+> It is shipped as an optional extra which can be activated by passing it in square brackets:
+> ```bash
+> pip install polars-fastembed[polars]          # most users can install regular Polars
+> pip install polars-fastembed[polars-lts-cpu]  # for backcompatibility with older CPUs
+> ```
 
 ## Features
 
@@ -35,44 +29,72 @@ dependency, making it a serious burden to use. I'm going to investigate alternat
 - Re-order/filter rows by semantic similarity to a query
 - Efficiently reuse loaded models via a global registry (no repeated model loads)
 
-## Usage
-
-TBD
-
 ## Demo
 
-See [demo.py](https://github.com/lmmx/polars-sbert/tree/master/demo.py)
+See [demo.py](https://github.com/lmmx/polars-fastembed/tree/master/demo.py)
+
+```py
+import polars as pl
+from polars_fastembed import register_model
+
+# Create a sample DataFrame
+df = pl.DataFrame(
+    {
+        "id": [1, 2, 3],
+        "text": [
+            "Hello world",
+            "Deep Learning is amazing",
+            "Polars and FastEmbed are well integrated",
+        ],
+    }
+)
+
+model_id = "BAAI/bge-small-en"
+
+# 1) Register a model
+#    Optionally specify GPU: providers=["CUDAExecutionProvider"]
+#    Or omit it for CPU usage
+register_model(model_id, providers=["CPUExecutionProvider"])
+
+# 2) Embed your text
+df_emb = df.fastembed.embed(
+    columns="text", model_name=model_id, output_column="embedding"
+)
+
+# Inspect embeddings
+print(df_emb)
+
+# 3) Perform retrieval
+result = df_emb.fastembed.retrieve(
+    query="Tell me about deep learning",
+    model_name=model_id,
+    embedding_column="embedding",
+    k=3,
+)
+print(result)
+```
 
 ```
-Corpus:
-shape: (3, 2)
-┌───────────────────────────┬───────────────────────────────┐
-│ title                     ┆ body                          │
-│ ---                       ┆ ---                           │
-│ str                       ┆ str                           │
-╞═══════════════════════════╪═══════════════════════════════╡
-│ Living With Normal Pets   ┆ Pet owner's manual            │
-│ My Cat Wants To Murder Me ┆ Scary stories about evil cats │
-│ A Guide to Walking Dogs   ┆ Learning to lead              │
-└───────────────────────────┴───────────────────────────────┘
-Embedded title and body columns with TaylorAI/gte-tiny
-Retrieve top k=None rows with query 'horror stories'
+shape: (3, 3)
+┌─────┬─────────────────────────────────┬─────────────────────────────────┐
+│ id  ┆ text                            ┆ embedding                       │
+│ --- ┆ ---                             ┆ ---                             │
+│ i64 ┆ str                             ┆ array[f64, 384]                 │
+╞═════╪═════════════════════════════════╪═════════════════════════════════╡
+│ 1   ┆ Hello world                     ┆ [-0.023137, -0.025523, … 0.028… │
+│ 2   ┆ Deep Learning is amazing        ┆ [-0.031434, -0.031442, … -0.03… │
+│ 3   ┆ Polars and FastEmbed are well … ┆ [-0.074164, 0.002853, … 0.0247… │
+└─────┴─────────────────────────────────┴─────────────────────────────────┘
 shape: (3, 4)
-┌───────────────────────────┬────────────────────────────┬────────────────────────────┬────────────┐
-│ title                     ┆ body                       ┆ embedding                  ┆ similarity │
-│ ---                       ┆ ---                        ┆ ---                        ┆ ---        │
-│ str                       ┆ str                        ┆ list[f32]                  ┆ f64        │
-╞═══════════════════════════╪════════════════════════════╪════════════════════════════╪════════════╡
-│ My Cat Wants To Murder Me ┆ Scary stories about evil   ┆ [-0.1195, -0.289812, …     ┆ 0.858065   │
-│                           ┆ cats                       ┆ 0.14939…                   ┆            │
-│ Living With Normal Pets   ┆ Pet owner's manual         ┆ [-0.168101, -0.158491, …   ┆ 0.754353   │
-│                           ┆                            ┆ 0.488…                     ┆            │
-│ A Guide to Walking Dogs   ┆ Learning to lead           ┆ [-0.388657, -0.37131, …    ┆ 0.727875   │
-│                           ┆                            ┆ 0.6422…                    ┆            │
-└───────────────────────────┴────────────────────────────┴────────────────────────────┴────────────┘
-Currently loaded models: ['TaylorAI/gte-tiny']
-Cleared model registry
-Currently loaded models: []
+┌─────┬─────────────────────────────────┬─────────────────────────────────┬────────────┐
+│ id  ┆ text                            ┆ embedding                       ┆ similarity │
+│ --- ┆ ---                             ┆ ---                             ┆ ---        │
+│ i64 ┆ str                             ┆ array[f64, 384]                 ┆ f64        │
+╞═════╪═════════════════════════════════╪═════════════════════════════════╪════════════╡
+│ 2   ┆ Deep Learning is amazing        ┆ [-0.031434, -0.031442, … -0.03… ┆ 0.924065   │
+│ 1   ┆ Hello world                     ┆ [-0.023137, -0.025523, … 0.028… ┆ 0.828904   │
+│ 3   ┆ Polars and FastEmbed are well … ┆ [-0.074164, 0.002853, … 0.0247… ┆ 0.805416   │
+└─────┴─────────────────────────────────┴─────────────────────────────────┴────────────┘
 ```
 
 ## Contributing

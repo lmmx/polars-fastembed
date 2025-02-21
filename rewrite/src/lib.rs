@@ -2,6 +2,7 @@ use pyo3_polars::PolarsAllocator;
 use pyo3::prelude::*;
 
 mod expressions;
+mod model_suggestions;
 
 #[pymodule]
 fn _polars_fastembed(m: &Bound<'_, PyModule>) -> PyResult<()> {

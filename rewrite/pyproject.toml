@@ -12,6 +12,11 @@ classifiers = [
   "Programming Language :: Python :: Implementation ::CPython",
 ]
 
+[project.optional-dependencies]
+dev = [
+	"maturin[patchelf]"
+]
+
 [tool.maturin]
 # The module name must match the `lib.name` from Cargo.toml
 module-name = "polars_fastembed._polars_fastembed"

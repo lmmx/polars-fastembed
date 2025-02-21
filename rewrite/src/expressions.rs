@@ -62,7 +62,7 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
 
             for opt_str in ca.into_iter() {
                 if let Some(text) = opt_str {
-                    match embedder.embed(&[text], None) {
+                    match embedder.embed((&[text]).to_vec(), None) {
                         Ok(mut results) => {
                             if let Some(emb) = results.pop() {
                                 row_embeddings.push(Some(emb));
@@ -87,11 +87,12 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
                 "embedding",
                 row_embeddings.len(),
                 0,
+                DataType::Float32,
             );
 
             for opt_vec in row_embeddings {
                 match opt_vec {
-                    Some(v) => builder.append_values(&v),
+                    Some(v) => builder.append_slice(&v),
                     None => builder.append_null(),
                 }
             }

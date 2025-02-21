@@ -72,7 +72,7 @@ class FastEmbedPlugin:
         if join_columns:
             # Concatenate specified columns by space
             df_concat = self._df.select(
-                pl.concat_str(columns, separator=" ").alias("_text_to_encode")
+                pl.concat_str(columns, separator=" ").alias("_text_to_encode"),
             )
             texts = df_concat["_text_to_encode"].to_list()
         else:
@@ -136,7 +136,7 @@ class FastEmbedPlugin:
             for emb_list in row_embs:
                 e_arr = np.array(emb_list, dtype=np.float32)
                 sim = float(
-                    np.dot(e_arr, query_emb) / (np.linalg.norm(e_arr) * query_norm)
+                    np.dot(e_arr, query_emb) / (np.linalg.norm(e_arr) * query_norm),
                 )
                 similarities.append(sim)
         elif similarity_metric == "dot":

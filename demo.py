@@ -10,7 +10,7 @@ df = pl.DataFrame(
             "Deep Learning is amazing",
             "Polars and FastEmbed are well integrated",
         ],
-    }
+    },
 )
 
 model_id = "BAAI/bge-small-en"
@@ -22,7 +22,9 @@ register_model(model_id, providers=["CPUExecutionProvider"])
 
 # 2) Embed your text
 df_emb = df.fastembed.embed(
-    columns="text", model_name=model_id, output_column="embedding"
+    columns="text",
+    model_name=model_id,
+    output_column="embedding",
 )
 
 # Inspect embeddings

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=1.0,<2.0", "polars>=0.20.6"]
+requires = ["maturin[patchelf]>=1.0,<2.0", "polars>=0.20.6"]
 build-backend = "maturin"
 
 [project]
@@ -13,8 +13,15 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+polars = [
+  "polars>=1.21.0"
+]
+polars-lts-cpu = [
+  "polars-lts-cpu>=1.21.0"
+]
 dev = [
-	"maturin[patchelf]"
+  "pre-commit>=4.1.0",
+  "pytest>=8.3.4"
 ]
 
 [tool.maturin]

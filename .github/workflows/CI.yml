@@ -55,8 +55,7 @@ jobs:
             target: aarch64
             before: |
               sudo apt-get update -y && \
-              sudo apt-get install -y && \
-              pkg-config libssl-dev && \
+              sudo apt-get install pkg-config libssl-dev -y && \
               pkg-config --modversion openssl && \
               pkg-config --cflags openssl && \
               pkg-config --libs openssl

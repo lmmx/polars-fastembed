@@ -38,6 +38,7 @@ jobs:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - runner: ubuntu-22.04

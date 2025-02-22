@@ -22,9 +22,9 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
+    # Define a reusable anchor for the "trigger condition" that was originally repeated in each job
     if: >
       (
-        # Define a reusable anchor for the "trigger condition" that was originally repeated in each job
         &trigger-condition >
           (github.event_name == 'push' &&
             (

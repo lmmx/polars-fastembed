@@ -56,8 +56,11 @@ jobs:
             before: |
               sudo apt-get update -y && \
               sudo apt-get install pkg-config libssl-dev -y && \
+              echo "modversion openssl:" && \
               pkg-config --modversion openssl && \
+              echo "cflags openssl:" && \
               pkg-config --cflags openssl && \
+              echo "libs openssl:" && \
               pkg-config --libs openssl
           # - runner: ubuntu-22.04
           #   target: armv7

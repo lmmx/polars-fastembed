@@ -78,6 +78,7 @@ jobs:
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+            dockeropts: "--env RING_PREGENERATE_ASM=1"
           - runner: ubuntu-22.04
             target: ppc64le
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev

@@ -113,7 +113,7 @@ class FastEmbedPlugin:
 
         # Now call the Rust expression
         new_df = self._df.with_columns(
-            embed_text.embed_text(text_col, model_id=model_name).alias(output_column),
+            embed_text(text_col, model_id=model_name).alias(output_column),
         )
 
         if join_columns:

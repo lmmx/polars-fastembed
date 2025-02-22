@@ -23,20 +23,113 @@ jobs:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
     if: >
-      (github.event_name == 'push' &&
+      (
+        github.event_name == 'push' &&
         (
-          startsWith(github.event.head_commit.message, 'chore(release)') ||
-          contains(github.event.head_commit.message, 'cibuildwheel')
+          startsWith(github.event.head_commit.message, 'chore(release)')
+          || contains(github.event.head_commit.message, 'cibuildwheel')
         )
       )
       || (github.event_name == 'workflow_dispatch')
+    outputs:
+      run-all: ${{ steps.parse.outputs.run-all }}
+      run-linux-x86_64: ${{ steps.parse.outputs.run-linux-x86_64 }}
+      run-linux-aarch64: ${{ steps.parse.outputs.run-linux-aarch64 }}
+      run-windows-x64: ${{ steps.parse.outputs.run-windows-x64 }}
+      run-macos-x86_64: ${{ steps.parse.outputs.run-macos-x86_64 }}
+      run-macos-aarch64: ${{ steps.parse.outputs.run-macos-aarch64 }}
+      run-sdist: ${{ steps.parse.outputs.run-sdist }}
+
     steps:
       - name: Confirm commit message matches
         run: echo "Commit message matched the condition."
 
+      - name: Parse commit message
+        id: parse
+        run: |
+          # Capture the commit message in a shell variable for convenience
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+
+          # Initialize all outputs to "false"
+          echo "run-all=false" >> $GITHUB_OUTPUT
+          echo "run-linux-x86_64=false" >> $GITHUB_OUTPUT
+          echo "run-linux-aarch64=false" >> $GITHUB_OUTPUT
+          echo "run-windows-x64=false" >> $GITHUB_OUTPUT
+          echo "run-macos-x86_64=false" >> $GITHUB_OUTPUT
+          echo "run-macos-aarch64=false" >> $GITHUB_OUTPUT
+          echo "run-sdist=false" >> $GITHUB_OUTPUT
+
+          # Check if commit message has the magic word "cibuildwheel"
+          if [[ "$COMMIT_MSG" == *"cibuildwheel"* ]]; then
+
+            # 1) If it’s just "cibuildwheel" with no further platform detail in parentheses,
+            #    then run-all is true.
+            #    We look for something like: build(cibuildwheel)
+            #    or if no bracket parsing can find platform details, we treat it as run-all.
+            REGEX_ALL="cibuildwheel\)"
+            # 2) If we find "cibuildwheel-" with parentheses, parse out the platforms
+            #    e.g. build(cibuildwheel-linux_aarch64,windows_x64)
+
+            # Attempt to capture content inside parentheses after "cibuildwheel-"
+            # e.g. "linux_aarch64,windows_x64" from "build(cibuildwheel-linux_aarch64,windows_x64)"
+            TARGET_LIST=$(echo "$COMMIT_MSG" | grep -oP '(?<=cibuildwheel-)[^)]*' || true)
+
+            if echo "$COMMIT_MSG" | grep -qE "$REGEX_ALL"; then
+              # We found something like "build(cibuildwheel)"
+              echo "run-all=true" >> $GITHUB_OUTPUT
+            elif [ -n "$TARGET_LIST" ]; then
+              # We have one or more targets separated by commas
+              # E.g. "linux_aarch64,windows_x64,sdist"
+              IFS=',' read -ra TARGETS <<< "$TARGET_LIST"
+              for T in "${TARGETS[@]}"; do
+                case "$T" in
+                  linux_x86_64)
+                    echo "run-linux-x86_64=true" >> $GITHUB_OUTPUT
+                    ;;
+                  linux_aarch64)
+                    echo "run-linux-aarch64=true" >> $GITHUB_OUTPUT
+                    ;;
+                  windows_x64)
+                    echo "run-windows-x64=true" >> $GITHUB_OUTPUT
+                    ;;
+                  macos_x86_64)
+                    echo "run-macos-x86_64=true" >> $GITHUB_OUTPUT
+                    ;;
+                  macos_aarch64)
+                    echo "run-macos-aarch64=true" >> $GITHUB_OUTPUT
+                    ;;
+                  sdist)
+                    echo "run-sdist=true" >> $GITHUB_OUTPUT
+                    ;;
+                  *)
+                    echo "Unknown cibuildwheel target: $T"
+                    ;;
+                esac
+              done
+            else
+              # There's 'cibuildwheel' but no bracket detail => run all
+              echo "run-all=true" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+
   linux:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
+    # Only run if run-all == true OR a specific linux_<arch> was requested.
+    if: >
+      needs.check-commit.outputs.run-all == 'true'
+      OR
+      (
+        matrix.platform.target == 'x86_64'
+        AND needs.check-commit.outputs.run-linux-x86_64 == 'true'
+      )
+      OR
+      (
+        matrix.platform.target == 'aarch64'
+        AND needs.check-commit.outputs.run-linux-aarch64 == 'true'
+      )
+
     strategy:
       fail-fast: false
       matrix:
@@ -129,6 +222,20 @@ jobs:
   macos:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
+    # Only run if run-all == true OR a specific macos_<arch> was requested.
+    if: >
+      needs.check-commit.outputs.run-all == 'true'
+      OR
+      (
+        matrix.platform.target == 'x86_64'
+        AND needs.check-commit.outputs.run-macos-x86_64 == 'true'
+      )
+      OR
+      (
+        matrix.platform.target == 'aarch64'
+        AND needs.check-commit.outputs.run-macos-aarch64 == 'true'
+      )
+
     strategy:
       fail-fast: false
       matrix:
@@ -137,6 +244,7 @@ jobs:
             target: x86_64
           - runner: macos-14
             target: aarch64
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -158,6 +266,12 @@ jobs:
   sdist:
     needs: [check-commit]
     runs-on: ubuntu-latest
+    # Only run if run-all == true OR if "cibuildwheel-sdist" was explicitly requested
+    if: >
+      needs.check-commit.outputs.run-all == 'true'
+      OR
+      needs.check-commit.outputs.run-sdist == 'true'
+
     steps:
       - uses: actions/checkout@v4
       - name: Build sdist

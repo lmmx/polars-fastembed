@@ -44,9 +44,13 @@ jobs:
           - runner: ubuntu-22.04
             target: x86_64
             before: yum install -y openssl-devel
-          - runner: ubuntu-22.04
-            target: x86
-            before: yum install -y openssl-devel
+          # x86 would require dynamic ORT loading
+          # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
+          # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331
+          # So instead of that I've chosen to just not support x86 (32-bit)
+          # - runner: ubuntu-22.04
+          #   target: x86
+          #   before: yum install -y openssl-devel
           - runner: ubuntu-22.04
             target: aarch64
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev

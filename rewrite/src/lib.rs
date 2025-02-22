@@ -1,6 +1,6 @@
 // See discussion 162
 // https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
-#[cfg(features = "openssl-vendored")]
+#[cfg(feature = "openssl-vendored")]
 use openssl_probe;
 
 use pyo3::prelude::*;
@@ -11,7 +11,7 @@ mod model_suggestions;
 mod registry;
 
 // See discussion 162
-#[cfg(features = "openssl-vendored")]
+#[cfg(feature = "openssl-vendored")]
 fn probe_ssl_certs() {
     openssl_probe::init_ssl_cert_env_vars();
 }

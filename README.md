@@ -1,6 +1,6 @@
 # Polars FastEmbed
 
-A Polars plugin for embedding DataFrames
+A Polars plugin for embedding DataFrames.
 
 ---
 

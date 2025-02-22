@@ -44,6 +44,7 @@ jobs:
           - runner: ubuntu-22.04
             target: x86_64
             before: yum install -y openssl-devel
+            dockeropts: ""
           # x86 would require dynamic ORT loading
           # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
           # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331
@@ -54,8 +55,9 @@ jobs:
           - runner: ubuntu-22.04
             target: aarch64
             before: |
+              sudo dpkg --add-architecture arm64 && \
               sudo apt-get update -y && \
-              sudo apt-get install pkg-config libssl-dev -y && \
+              sudo apt-get install -y pkg-config:arm64 libssl-dev:arm64 && \ # sudo apt-get install pkg-config libssl-dev -y && \
               echo "modversion openssl:" && \
               pkg-config --modversion openssl && \
               echo "cflags openssl:" && \
@@ -70,6 +72,7 @@ jobs:
               ls -l /usr/lib/*ssl* || true && \
               echo ">>> Debug: /usr/include/openssl:" && \
               ls -l /usr/include/openssl || true
+            dockeropts: "--env OPENSSL_DIR='/usr'"
           # - runner: ubuntu-22.04
           #   target: armv7
           #   before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
@@ -94,9 +97,8 @@ jobs:
           manylinux: auto
           before-script-linux: |
             ${{ matrix.platform.before }}
-          docker-options: "--env OPENSSL_DIR='${{ env.OPENSSL_DIR }}'"
-        env:
-          OPENSSL_DIR: "/usr"
+          docker-options: |
+            ${{ matrix.platform.dockeropts }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

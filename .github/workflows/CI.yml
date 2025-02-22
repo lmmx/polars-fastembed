@@ -37,6 +37,8 @@ jobs:
   linux:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
+    env:
+      CIBW_BEFORE_BUILD_LINUX: yum -y install openssl openssl-devel
     strategy:
       matrix:
         platform:

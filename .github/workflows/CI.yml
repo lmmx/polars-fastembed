@@ -119,15 +119,15 @@ jobs:
     # Only run if run-all == true OR a specific linux_<arch> was requested.
     if: >
       needs.check-commit.outputs.run-all == 'true'
-      OR
+      ||
       (
         matrix.platform.target == 'x86_64'
-        AND needs.check-commit.outputs.run-linux-x86_64 == 'true'
+        && needs.check-commit.outputs.run-linux-x86_64 == 'true'
       )
-      OR
+      ||
       (
         matrix.platform.target == 'aarch64'
-        AND needs.check-commit.outputs.run-linux-aarch64 == 'true'
+        && needs.check-commit.outputs.run-linux-aarch64 == 'true'
       )
 
     strategy:
@@ -225,15 +225,15 @@ jobs:
     # Only run if run-all == true OR a specific macos_<arch> was requested.
     if: >
       needs.check-commit.outputs.run-all == 'true'
-      OR
+      ||
       (
         matrix.platform.target == 'x86_64'
-        AND needs.check-commit.outputs.run-macos-x86_64 == 'true'
+        && needs.check-commit.outputs.run-macos-x86_64 == 'true'
       )
-      OR
+      ||
       (
         matrix.platform.target == 'aarch64'
-        AND needs.check-commit.outputs.run-macos-aarch64 == 'true'
+        && needs.check-commit.outputs.run-macos-aarch64 == 'true'
       )
 
     strategy:
@@ -268,9 +268,11 @@ jobs:
     runs-on: ubuntu-latest
     # Only run if run-all == true OR if "cibuildwheel-sdist" was explicitly requested
     if: >
-      needs.check-commit.outputs.run-all == 'true'
-      OR
-      needs.check-commit.outputs.run-sdist == 'true'
+      (
+        needs.check-commit.outputs.run-all == 'true'
+        ||
+        needs.check-commit.outputs.run-sdist == 'true'
+      )
 
     steps:
       - uses: actions/checkout@v4

@@ -11,6 +11,9 @@ classifiers = [
   "Programming Language :: Rust",
   "Programming Language :: Python :: Implementation ::CPython",
 ]
+dependencies = [
+  "numpy>=2.2.0"
+]
 
 [project.optional-dependencies]
 polars = [

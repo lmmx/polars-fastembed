@@ -22,14 +22,13 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
-    if: >
-      (github.event_name == 'push' &&
+    if: ${{ (github.event_name == 'push' &&
         (
           startsWith(github.event.head_commit.message, 'chore(release)') ||
           contains(github.event.head_commit.message, 'cibuildwheel')
         )
       )
-      || (github.event_name == 'workflow_dispatch')
+      || (github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Confirm commit message matches
         run: echo "Commit message matched the condition."
@@ -88,23 +87,22 @@ jobs:
 
   linux:
     needs: [check-commit, check-commit-select]
-    if: >
-      (
-        (github.event_name == 'push' &&
-          (
-            startsWith(github.event.head_commit.message, 'chore(release)') ||
-            contains(github.event.head_commit.message, 'cibuildwheel')
-          )
+    if: ${{ (
+      (github.event_name == 'push' &&
+        (
+          startsWith(github.event.head_commit.message, 'chore(release)') ||
+          contains(github.event.head_commit.message, 'cibuildwheel')
         )
-        || (github.event_name == 'workflow_dispatch')
       )
+      || (github.event_name == 'workflow_dispatch')
+    )
+    || (
+      needs.check-commit-select.outputs.linuxSelected == 'true'
       || (
-        needs.check-commit-select.outputs.linuxSelected == 'true'
-        || (
-          needs.check-commit-select.outputs.linuxArches &&
-          contains(needs.check-commit-select.outputs.linuxArches, matrix.platform.target)
-        )
+        needs.check-commit-select.outputs.linuxArches &&
+        contains(needs.check-commit-select.outputs.linuxArches, matrix.platform.target)
       )
+    ) }}
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -185,23 +183,22 @@ jobs:
 
   windows:
     needs: [check-commit, check-commit-select]
-    if: >
-      (
-        (github.event_name == 'push' &&
-          (
-            startsWith(github.event.head_commit.message, 'chore(release)') ||
-            contains(github.event.head_commit.message, 'cibuildwheel')
-          )
+    if: ${{ (
+      (github.event_name == 'push' &&
+        (
+          startsWith(github.event.head_commit.message, 'chore(release)') ||
+          contains(github.event.head_commit.message, 'cibuildwheel')
         )
-        || (github.event_name == 'workflow_dispatch')
       )
+      || (github.event_name == 'workflow_dispatch')
+    )
+    || (
+      needs.check-commit-select.outputs.windowsSelected == 'true'
       || (
-        needs.check-commit-select.outputs.windowsSelected == 'true'
-        || (
-          needs.check-commit-select.outputs.windowsArches &&
-          contains(needs.check-commit-select.outputs.windowsArches, matrix.platform.target)
-        )
+        needs.check-commit-select.outputs.windowsArches &&
+        contains(needs.check-commit-select.outputs.windowsArches, matrix.platform.target)
       )
+    ) }}
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -232,23 +229,22 @@ jobs:
 
   macos:
     needs: [check-commit, check-commit-select]
-    if: >
-      (
-        (github.event_name == 'push' &&
-          (
-            startsWith(github.event.head_commit.message, 'chore(release)') ||
-            contains(github.event.head_commit.message, 'cibuildwheel')
-          )
+    if: ${{ (
+      (github.event_name == 'push' &&
+        (
+          startsWith(github.event.head_commit.message, 'chore(release)') ||
+          contains(github.event.head_commit.message, 'cibuildwheel')
         )
-        || (github.event_name == 'workflow_dispatch')
       )
+      || (github.event_name == 'workflow_dispatch')
+    )
+    || (
+      needs.check-commit-select.outputs.macosSelected == 'true'
       || (
-        needs.check-commit-select.outputs.macosSelected == 'true'
-        || (
-          needs.check-commit-select.outputs.macosArches &&
-          contains(needs.check-commit-select.outputs.macosArches, matrix.platform.target)
-        )
+        needs.check-commit-select.outputs.macosArches &&
+        contains(needs.check-commit-select.outputs.macosArches, matrix.platform.target)
       )
+    ) }}
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -277,17 +273,16 @@ jobs:
 
   sdist:
     needs: [check-commit, check-commit-select]
-    if: >
-      (
-        (github.event_name == 'push' &&
-          (
-            startsWith(github.event.head_commit.message, 'chore(release)') ||
-            contains(github.event.head_commit.message, 'cibuildwheel')
-          )
+    if: ${{ (
+      (github.event_name == 'push' &&
+        (
+          startsWith(github.event.head_commit.message, 'chore(release)') ||
+          contains(github.event.head_commit.message, 'cibuildwheel')
         )
-        || (github.event_name == 'workflow_dispatch')
       )
-      || (needs.check-commit-select.outputs.sdistSelected == 'true')
+      || (github.event_name == 'workflow_dispatch')
+    )
+    || (needs.check-commit-select.outputs.sdistSelected == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

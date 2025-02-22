@@ -105,7 +105,7 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter ${{ steps.is-openssl-vendored.outputs.enabled }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: ${{ (matrix.platform.target == 'aarch64' || matrix.platform.target == 's390x') && '2_28' || 'auto' }}
+          manylinux: ${{ matrix.platform.target == 'aarch64' && '2_28' || 'auto' }}
           before-script-linux: |
             ${{ matrix.platform.before }}
           docker-options: |

@@ -62,6 +62,14 @@ jobs:
               pkg-config --cflags openssl && \
               echo "libs openssl:" && \
               pkg-config --libs openssl
+              echo ">>> Debug: libssl-dev file list:" && \
+              dpkg -L libssl-dev && \
+              echo ">>> Debug: openssl.pc path:" && \
+              pkg-config --variable=pcfiledir openssl && \
+              echo ">>> Debug: /usr/lib/*ssl*:" && \
+              ls -l /usr/lib/*ssl* || true && \
+              echo ">>> Debug: /usr/include/openssl:" && \
+              ls -l /usr/include/openssl || true
           # - runner: ubuntu-22.04
           #   target: armv7
           #   before: sudo apt-get update -y && sudo apt-get install -y libssl-dev

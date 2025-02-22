@@ -43,7 +43,7 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
-            before: echo yum install -y openssl-devel
+            before: yum install -y openssl-devel
           # x86 would require dynamic ORT loading
           # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
           # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331

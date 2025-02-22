@@ -65,6 +65,8 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
+          before-script-linux: |
+            yum install -y openssl-devel
           # docker-options: "--env CIBW_BEFORE_ALL_LINUX='${{ env.CIBW_BEFORE_ALL_LINUX }}'"
         # env:
         #   CIBW_BEFORE_ALL_LINUX: "yum install -y openssl-devel"

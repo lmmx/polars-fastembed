@@ -65,9 +65,9 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
-          docker-options: "--env CIBW_BEFORE_ALL_LINUX='${{ env.CIBW_BEFORE_ALL_LINUX }}'"
-        env:
-          CIBW_BEFORE_ALL_LINUX: "yum install -y openssl-devel"
+          # docker-options: "--env CIBW_BEFORE_ALL_LINUX='${{ env.CIBW_BEFORE_ALL_LINUX }}'"
+        # env:
+        #   CIBW_BEFORE_ALL_LINUX: "yum install -y openssl-devel"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

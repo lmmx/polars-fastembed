@@ -94,9 +94,9 @@ jobs:
           manylinux: auto
           before-script-linux: |
             ${{ matrix.platform.before }}
-          # docker-options: "--env CIBW_BEFORE_ALL_LINUX='${{ env.CIBW_BEFORE_ALL_LINUX }}'"
-        # env:
-        #   CIBW_BEFORE_ALL_LINUX: "yum install -y openssl-devel"
+          docker-options: "--env OPENSSL_DIR='${{ env.OPENSSL_DIR }}'"
+        env:
+          OPENSSL_DIR: "/usr"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

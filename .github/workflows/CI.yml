@@ -56,31 +56,31 @@ jobs:
             target: aarch64
             before: |
               sudo apt-get update -y && \
-              sudo apt-get install pkg-config libssl-dev -y && \
-              echo "modversion openssl:" && \
-              pkg-config --modversion openssl && \
-              echo "cflags openssl:" && \
-              pkg-config --cflags openssl && \
-              echo "libs openssl:" && \
-              pkg-config --libs openssl
-              echo ">>> Debug: libssl-dev file list:" && \
-              dpkg -L libssl-dev && \
-              echo ">>> Debug: openssl.pc path:" && \
-              pkg-config --variable=pcfiledir openssl && \
-              echo ">>> Debug: /usr/lib/*ssl*:" && \
-              ls -l /usr/lib/*ssl* || true && \
-              echo ">>> Debug: /usr/include/openssl:" && \
-              ls -l /usr/include/openssl || true
+              sudo apt-get install pkg-config libssl-dev -y
+              # echo "modversion openssl:" && \
+              # pkg-config --modversion openssl && \
+              # echo "cflags openssl:" && \
+              # pkg-config --cflags openssl && \
+              # echo "libs openssl:" && \
+              # pkg-config --libs openssl
+              # echo ">>> Debug: libssl-dev file list:" && \
+              # dpkg -L libssl-dev && \
+              # echo ">>> Debug: openssl.pc path:" && \
+              # pkg-config --variable=pcfiledir openssl && \
+              # echo ">>> Debug: /usr/lib/*ssl*:" && \
+              # ls -l /usr/lib/*ssl* || true && \
+              # echo ">>> Debug: /usr/include/openssl:" && \
+              # ls -l /usr/include/openssl || true
             dockeropts: "--env OPENSSL_DIR='/usr'"
-          # - runner: ubuntu-22.04
-          #   target: armv7
-          #   before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-          # - runner: ubuntu-22.04
-          #   target: s390x
-          #   before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-          # - runner: ubuntu-22.04
-          #   target: ppc64le
-          #   before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+          - runner: ubuntu-22.04
+            target: armv7
+            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+          - runner: ubuntu-22.04
+            target: s390x
+            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+          - runner: ubuntu-22.04
+            target: ppc64le
+            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

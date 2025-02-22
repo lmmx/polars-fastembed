@@ -18,23 +18,21 @@ on:
 permissions:
   contents: read
 
-# Define a reusable anchor for the "trigger condition" that was originally repeated in each job
-trigger-condition: &trigger-condition >
-  (github.event_name == 'push' &&
-    (
-      startsWith(github.event.head_commit.message, 'chore(release)') ||
-      contains(github.event.head_commit.message, 'cibuildwheel')
-    )
-  )
-  || (github.event_name == 'workflow_dispatch')
-
 jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
     if: >
       (
-        *trigger-condition
+        # Define a reusable anchor for the "trigger condition" that was originally repeated in each job
+        &trigger-condition >
+          (github.event_name == 'push' &&
+            (
+              startsWith(github.event.head_commit.message, 'chore(release)') ||
+              contains(github.event.head_commit.message, 'cibuildwheel')
+            )
+          )
+          || (github.event_name == 'workflow_dispatch')
       )
     steps:
       - name: Confirm commit message matches

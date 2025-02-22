@@ -67,7 +67,7 @@ jobs:
           manylinux: auto
           docker-options: "--env CIBW_BEFORE_BUILD_LINUX='${{ env.CIBW_BEFORE_BUILD_LINUX }}'"
         env:
-          CIBW_BEFORE_BUILD_LINUX: yum -y install perl-IPC-Cmd
+          CIBW_BEFORE_BUILD_LINUX: "yum install -y openssl-devel"
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:

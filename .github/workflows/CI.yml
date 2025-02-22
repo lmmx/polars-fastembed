@@ -49,9 +49,9 @@ jobs:
           # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
           # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331
           # So instead of that I've chosen to just not support x86 (32-bit)
-          # - runner: ubuntu-22.04
-          #   target: x86
-          #   before: yum install -y openssl-devel
+          - runner: ubuntu-22.04
+            target: x86
+            before: yum install -y openssl-devel
           - runner: ubuntu-22.04
             target: aarch64
             before: |
@@ -126,8 +126,8 @@ jobs:
           - runner: windows-latest
             target: x64
           # Same ONNX issue as x86 on Linux (see ORT comment above)
-          # - runner: windows-latest
-          #   target: x86
+          - runner: windows-latest
+            target: x86
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

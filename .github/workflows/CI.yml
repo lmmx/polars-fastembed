@@ -18,24 +18,93 @@ on:
 permissions:
   contents: read
 
+# Define a reusable anchor for the "trigger condition" that was originally repeated in each job
+trigger-condition: &trigger-condition >
+  (github.event_name == 'push' &&
+    (
+      startsWith(github.event.head_commit.message, 'chore(release)') ||
+      contains(github.event.head_commit.message, 'cibuildwheel')
+    )
+  )
+  || (github.event_name == 'workflow_dispatch')
+
 jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
     if: >
-      (github.event_name == 'push' &&
-        (
-          startsWith(github.event.head_commit.message, 'chore(release)') ||
-          contains(github.event.head_commit.message, 'cibuildwheel')
-        )
+      (
+        *trigger-condition
       )
-      || (github.event_name == 'workflow_dispatch')
     steps:
       - name: Confirm commit message matches
         run: echo "Commit message matched the condition."
 
+  check-commit-select:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse commit message for cibw patterns
+        id: parse
+        run: |
+          msg="${{ github.event.head_commit.message || '' }}"
+          linuxSelected=false
+          windowsSelected=false
+          macosSelected=false
+          sdistSelected=false
+
+          if echo "$msg" | grep -Eq 'cibw-linux(\b|-)'; then
+            linuxSelected=true
+          fi
+          if echo "$msg" | grep -Eq 'cibw-windows(\b|-)'; then
+            windowsSelected=true
+          fi
+          if echo "$msg" | grep -Eq 'cibw-macos(\b|-)'; then
+            macosSelected=true
+          fi
+          if echo "$msg" | grep -Eq 'cibw-sdist(\b|-)'; then
+            sdistSelected=true
+          fi
+
+          linuxArches=$(echo "$msg" | grep -Eo 'cibw-linux-[^[:space:]]+' || true)
+          windowsArches=$(echo "$msg" | grep -Eo 'cibw-windows-[^[:space:]]+' || true)
+          macosArches=$(echo "$msg" | grep -Eo 'cibw-macos-[^[:space:]]+' || true)
+
+          # For arches, just extract what's after the second hyphen:
+          # e.g. "cibw-linux-aarch64" => "aarch64"
+          linuxArches=$(echo "$linuxArches" | cut -d- -f3 | sort -u | paste -sd, - || true)
+          windowsArches=$(echo "$windowsArches" | cut -d- -f3 | sort -u | paste -sd, - || true)
+          macosArches=$(echo "$macosArches" | cut -d- -f3 | sort -u | paste -sd, - || true)
+
+          echo "linuxSelected=$linuxSelected" >> $GITHUB_OUTPUT
+          echo "windowsSelected=$windowsSelected" >> $GITHUB_OUTPUT
+          echo "macosSelected=$macosSelected" >> $GITHUB_OUTPUT
+          echo "sdistSelected=$sdistSelected" >> $GITHUB_OUTPUT
+
+          echo "linuxArches=$linuxArches" >> $GITHUB_OUTPUT
+          echo "windowsArches=$windowsArches" >> $GITHUB_OUTPUT
+          echo "macosArches=$macosArches" >> $GITHUB_OUTPUT
+    outputs:
+      linuxSelected: ${{ steps.parse.outputs.linuxSelected }}
+      windowsSelected: ${{ steps.parse.outputs.windowsSelected }}
+      macosSelected: ${{ steps.parse.outputs.macosSelected }}
+      sdistSelected: ${{ steps.parse.outputs.sdistSelected }}
+      linuxArches: ${{ steps.parse.outputs.linuxArches }}
+      windowsArches: ${{ steps.parse.outputs.windowsArches }}
+      macosArches: ${{ steps.parse.outputs.macosArches }}
+
   linux:
-    needs: [check-commit]
+    needs: [check-commit, check-commit-select]
+    if: >
+      (
+        *trigger-condition
+      )
+      || (
+        needs.check-commit-select.outputs.linuxSelected == 'true'
+        || (
+          needs.check-commit-select.outputs.linuxArches &&
+          contains(needs.check-commit-select.outputs.linuxArches, matrix.platform.target)
+        )
+      )
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -86,7 +155,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      # via https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
       - name: Calculate openssl-vendored
         shell: bash
         id: is-openssl-vendored
@@ -115,7 +183,18 @@ jobs:
           path: dist
 
   windows:
-    needs: [check-commit]
+    needs: [check-commit, check-commit-select]
+    if: >
+      (
+        *trigger-condition
+      )
+      || (
+        needs.check-commit-select.outputs.windowsSelected == 'true'
+        || (
+          needs.check-commit-select.outputs.windowsArches &&
+          contains(needs.check-commit-select.outputs.windowsArches, matrix.platform.target)
+        )
+      )
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -145,7 +224,18 @@ jobs:
           path: dist
 
   macos:
-    needs: [check-commit]
+    needs: [check-commit, check-commit-select]
+    if: >
+      (
+        *trigger-condition
+      )
+      || (
+        needs.check-commit-select.outputs.macosSelected == 'true'
+        || (
+          needs.check-commit-select.outputs.macosArches &&
+          contains(needs.check-commit-select.outputs.macosArches, matrix.platform.target)
+        )
+      )
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
@@ -173,7 +263,12 @@ jobs:
           path: dist
 
   sdist:
-    needs: [check-commit]
+    needs: [check-commit, check-commit-select]
+    if: >
+      (
+        *trigger-condition
+      )
+      || (needs.check-commit-select.outputs.sdistSelected == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

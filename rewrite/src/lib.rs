@@ -17,7 +17,7 @@ fn probe_ssl_certs() {
 }
 
 // See discussion 162
-#[cfg(not(feature = "openssl_probe"))]
+#[cfg(not(feature = "openssl-vendored"))]
 fn probe_ssl_certs() {}
 
 #[pymodule]

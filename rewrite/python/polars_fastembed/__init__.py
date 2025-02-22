@@ -105,7 +105,7 @@ class FastEmbedPlugin:
         # Optionally concat multiple columns
         if join_columns:
             self._df = self._df.with_columns(
-                pl.concat_str(columns, separator=" ").alias("_text_to_embed")
+                pl.concat_str(columns, separator=" ").alias("_text_to_embed"),
             )
             text_col = "_text_to_embed"
         else:
@@ -113,7 +113,7 @@ class FastEmbedPlugin:
 
         # Now call the Rust expression
         new_df = self._df.with_columns(
-            embed_text.embed_text(text_col, model_id=model_name).alias(output_column)
+            embed_text.embed_text(text_col, model_id=model_name).alias(output_column),
         )
 
         if join_columns:
@@ -147,7 +147,7 @@ class FastEmbedPlugin:
 
         # 1) Embed the query in a single-row DF
         q_df = pl.DataFrame({"_q": [query]}).with_columns(
-            embed_text("_q", model_id=model_name).alias("_q_emb")
+            embed_text("_q", model_id=model_name).alias("_q_emb"),
         )
         # Extract that single embedding as a python list
         q_emb_list = q_df.select("_q_emb").item()  # e.g. [0.123, 0.456, ...]

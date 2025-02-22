@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING
+from collections.abc import Sequence
 
 import polars as pl
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from polars.type_aliases import IntoExpr, PolarsDataType
 
 

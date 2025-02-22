@@ -22,18 +22,14 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
-    # Define a reusable anchor for the "trigger condition" that was originally repeated in each job
     if: >
-      (
-        &trigger-condition >
-          (github.event_name == 'push' &&
-            (
-              startsWith(github.event.head_commit.message, 'chore(release)') ||
-              contains(github.event.head_commit.message, 'cibuildwheel')
-            )
-          )
-          || (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'push' &&
+        (
+          startsWith(github.event.head_commit.message, 'chore(release)') ||
+          contains(github.event.head_commit.message, 'cibuildwheel')
+        )
       )
+      || (github.event_name == 'workflow_dispatch')
     steps:
       - name: Confirm commit message matches
         run: echo "Commit message matched the condition."
@@ -94,7 +90,13 @@ jobs:
     needs: [check-commit, check-commit-select]
     if: >
       (
-        *trigger-condition
+        (github.event_name == 'push' &&
+          (
+            startsWith(github.event.head_commit.message, 'chore(release)') ||
+            contains(github.event.head_commit.message, 'cibuildwheel')
+          )
+        )
+        || (github.event_name == 'workflow_dispatch')
       )
       || (
         needs.check-commit-select.outputs.linuxSelected == 'true'
@@ -153,6 +155,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      # via https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
       - name: Calculate openssl-vendored
         shell: bash
         id: is-openssl-vendored
@@ -184,7 +187,13 @@ jobs:
     needs: [check-commit, check-commit-select]
     if: >
       (
-        *trigger-condition
+        (github.event_name == 'push' &&
+          (
+            startsWith(github.event.head_commit.message, 'chore(release)') ||
+            contains(github.event.head_commit.message, 'cibuildwheel')
+          )
+        )
+        || (github.event_name == 'workflow_dispatch')
       )
       || (
         needs.check-commit-select.outputs.windowsSelected == 'true'
@@ -225,7 +234,13 @@ jobs:
     needs: [check-commit, check-commit-select]
     if: >
       (
-        *trigger-condition
+        (github.event_name == 'push' &&
+          (
+            startsWith(github.event.head_commit.message, 'chore(release)') ||
+            contains(github.event.head_commit.message, 'cibuildwheel')
+          )
+        )
+        || (github.event_name == 'workflow_dispatch')
       )
       || (
         needs.check-commit-select.outputs.macosSelected == 'true'
@@ -264,7 +279,13 @@ jobs:
     needs: [check-commit, check-commit-select]
     if: >
       (
-        *trigger-condition
+        (github.event_name == 'push' &&
+          (
+            startsWith(github.event.head_commit.message, 'chore(release)') ||
+            contains(github.event.head_commit.message, 'cibuildwheel')
+          )
+        )
+        || (github.event_name == 'workflow_dispatch')
       )
       || (needs.check-commit-select.outputs.sdistSelected == 'true')
     runs-on: ubuntu-latest

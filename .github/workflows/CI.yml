@@ -86,12 +86,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      # via https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
+      - name: Calculate openssl-vendored
+        shell: bash
+        id: is-openssl-vendored
+        run: |
+          if [[ "${{ startsWith(matrix.platform.target, 'x86') }}" == "true" ]]; then
+            echo "enabled=" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=--features openssl-vendored" >> $GITHUB_OUTPUT
+          fi
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           working-directory: rewrite
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist --find-interpreter ${{ steps.is-openssl-vendored.outputs.enabled }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
           before-script-linux: |

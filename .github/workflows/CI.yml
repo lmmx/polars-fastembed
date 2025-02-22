@@ -78,6 +78,8 @@ jobs:
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+            # via https://github.com/rust-lang/stacker/issues/79
+            dockeropts: "--env CFLAGS_s390x_unknown_linux_gnu=-march=z10"
           - runner: ubuntu-22.04
             target: ppc64le
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev

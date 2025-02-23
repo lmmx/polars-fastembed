@@ -94,9 +94,8 @@ jobs:
         uses: PyO3/maturin-action@v1
         if: matrix.platform.skip != true
         with:
-          working-directory: rewrite
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter ${{ steps.is-openssl-vendored.outputs.enabled }}
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ steps.is-openssl-vendored.outputs.enabled }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: ${{ matrix.platform.target == 'aarch64' && '2_28' || 'auto' }}
           before-script-linux: |

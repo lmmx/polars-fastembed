@@ -37,7 +37,6 @@ jobs:
   linux:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
-    if: ${{ matrix.platform.skip != true }}
     strategy:
       fail-fast: false
       matrix:
@@ -93,6 +92,7 @@ jobs:
           fi
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        if: matrix.platform.skip != true
         with:
           working-directory: rewrite
           target: ${{ matrix.platform.target }}
@@ -105,6 +105,7 @@ jobs:
             ${{ matrix.platform.dockeropts }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        if: matrix.platform.skip != true
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
@@ -112,7 +113,6 @@ jobs:
   windows:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
-    if: ${{ matrix.platform.skip != true }}
     strategy:
       fail-fast: false
       matrix:
@@ -132,12 +132,14 @@ jobs:
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        if: matrix.platform.skip != true
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
@@ -145,7 +147,6 @@ jobs:
   macos:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
-    if: ${{ matrix.platform.skip != true }}
     strategy:
       fail-fast: false
       matrix:
@@ -163,12 +164,14 @@ jobs:
           python-version: 3.x
       - name: Build wheels
         uses: PyO3/maturin-action@v1
+        if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
+        if: matrix.platform.skip != true
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist

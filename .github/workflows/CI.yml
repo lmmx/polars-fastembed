@@ -37,6 +37,7 @@ jobs:
   linux:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
+    if: ${{ matrix.platform.skip != true }}
     strategy:
       fail-fast: false
       matrix:
@@ -45,44 +46,36 @@ jobs:
             target: x86_64
             before: yum install -y openssl-devel
             dockeropts: ""
-          # x86 would require dynamic ORT loading
-          # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
-          # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331
-          # So instead of that I've chosen to just not support x86 (32-bit)
+            skip: false
           - runner: ubuntu-22.04
             target: x86
             before: yum install -y openssl-devel
+            skip: true
+            # x86 would require dynamic ORT loading and building ONNX runtime from source is
+            # required to achieve that, so for now we cannot support x86 (32-bit)
+            # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
+            # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331
           - runner: ubuntu-22.04
             target: aarch64
             before: |
               sudo apt-get update -y && \
               sudo apt-get install pkg-config libssl-dev -y
-              # echo "modversion openssl:" && \
-              # pkg-config --modversion openssl && \
-              # echo "cflags openssl:" && \
-              # pkg-config --cflags openssl && \
-              # echo "libs openssl:" && \
-              # pkg-config --libs openssl
-              # echo ">>> Debug: libssl-dev file list:" && \
-              # dpkg -L libssl-dev && \
-              # echo ">>> Debug: openssl.pc path:" && \
-              # pkg-config --variable=pcfiledir openssl && \
-              # echo ">>> Debug: /usr/lib/*ssl*:" && \
-              # ls -l /usr/lib/*ssl* || true && \
-              # echo ">>> Debug: /usr/include/openssl:" && \
-              # ls -l /usr/include/openssl || true
             dockeropts: "--env OPENSSL_DIR='/usr'"
+            skip: false
           - runner: ubuntu-22.04
             target: armv7
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+            skip: true
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             # via https://github.com/rust-lang/stacker/issues/79
             dockeropts: "--env CFLAGS_s390x_unknown_linux_gnu=-march=z10"
+            skip: true
           - runner: ubuntu-22.04
             target: ppc64le
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
+            skip: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -119,15 +112,18 @@ jobs:
   windows:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
+    if: ${{ matrix.platform.skip != true }}
     strategy:
       fail-fast: false
       matrix:
         platform:
           - runner: windows-latest
             target: x64
+            skip: false
           # Same ONNX issue as x86 on Linux (see ORT comment above)
           - runner: windows-latest
             target: x86
+            skip: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -149,14 +145,17 @@ jobs:
   macos:
     needs: [check-commit]
     runs-on: ${{ matrix.platform.runner }}
+    if: ${{ matrix.platform.skip != true }}
     strategy:
       fail-fast: false
       matrix:
         platform:
           - runner: macos-13
             target: x86_64
+            skip: false
           - runner: macos-14
             target: aarch64
+            skip: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -31,7 +31,7 @@ pip install polars-fastembed
 
 ## Demo
 
-See [demo.py](https://github.com/lmmx/polars-fastembed/tree/master/demo.py)
+See [demo.py](https://github.com/lmmx/polars-fastembed/tree/master/rewrite/demo.py)
 
 ```py
 import polars as pl
@@ -99,8 +99,11 @@ shape: (3, 4)
 └─────┴─────────────────────────────────┴─────────────────────────────────┴────────────┘
 ```
 
-Note: in the original version this was a 384-dimensional array of f64 and here it is a list of f32.
-This will become an array as well in future versions (watch this space).
+Note:
+
+- This will download a 133 MB model to your working directory under `.fastembed_cache`
+- In the original version this was a 384-dimensional array of f64 and here it is a list of f32.
+  This will become an array as well in future versions (watch this space).
 
 ## Contributing
 

@@ -9,11 +9,11 @@ once_cell = "1.20.3"
 # For aarch64 CI building: https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
 openssl = {version = "0.10", features = ["vendored"], optional = true}
 openssl-probe = {version = "0.1", optional = true}
-ort = {version = "2.0", default_features = false}
+ort = {version = "2.0", default_features = false, optional = true}
 
 [features]
 openssl-vendored = ["dep:openssl", "dep:openssl-probe"]
-ort-dynamic = ["ort/load-dynamic"]
+ort-dynamic = ["dep:ort", "ort/load-dynamic"]
 
 [lib]
 name = "_polars_fastembed"

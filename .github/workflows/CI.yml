@@ -61,6 +61,7 @@ jobs:
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
               python -m pip install flatbuffers && \
               mkdir -p /development/libs && \
+              sed -i 's/python3 /python3 -m trace --trace /g' build.sh && \
               ./build.sh --config RelWithDebInfo \
                      --build_shared_lib \
                      --parallel \
@@ -69,7 +70,8 @@ jobs:
                      --skip_tests \
                      --cmake_extra_defines CMAKE_INSTALL_PREFIX=/development/libs/ \
                      --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
-                     --target install
+                     --target install && \
+              echo "Built with exit code $?"
             skip: false
             features: ""
             manylinux: "2_28"

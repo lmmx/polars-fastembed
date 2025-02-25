@@ -48,6 +48,8 @@ jobs:
             dockeropts: ""
             skip: false
             features: ""
+            manylinux: auto
+            container: "off"
           - runner: ubuntu-22.04
             target: x86
             before: |
@@ -67,10 +69,12 @@ jobs:
                      --allow_running_as_root \
                      --skip_tests \
                      --cmake_extra_defines CMAKE_INSTALL_PREFIX=/development/libs/ \
-                     --cmake_extra_defines nnxruntime_BUILD_UNIT_TESTS=OFF \
+                     --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
                      --target install
             skip: false
             features: ""
+            manylinux: "off"
+            container: "https://github.com/cross-rs/cross/pkgs/container/i686-unknown-linux-gnu"
             # x86 would require dynamic ORT loading and building ONNX runtime from source is
             # required to achieve that, so for now we cannot support x86 (32-bit)
             # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
@@ -83,11 +87,15 @@ jobs:
             dockeropts: "--env OPENSSL_DIR='/usr'"
             skip: false
             features: "--features openssl-vendored"
+            manylinux: 2_28
+            container: "off"
           - runner: ubuntu-22.04
             target: armv7
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             skip: true
             features: "--features openssl-vendored"
+            manylinux: auto
+            container: "off"
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
@@ -95,11 +103,15 @@ jobs:
             dockeropts: "--env CFLAGS_s390x_unknown_linux_gnu=-march=z10"
             skip: true
             features: "--features openssl-vendored"
+            manylinux: auto
+            container: "off"
           - runner: ubuntu-22.04
             target: ppc64le
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             skip: true
             features: "--features openssl-vendored"
+            manylinux: auto
+            container: "off"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -112,7 +124,8 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: ${{ matrix.platform.target == 'aarch64' && '2_28' || 'auto' }}
+          manylinux: ${{ matrix.platform.manylinux }}
+          container: ${{ matrix.platform.container }}
           before-script-linux: |
             ${{ matrix.platform.before }}
           docker-options: |

@@ -30,8 +30,9 @@ jobs:
         )
       )
       || (github.event_name == 'workflow_dispatch')
+      || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx')
     steps:
-      - name: Confirm commit message matches
+      - name: Confirm commit message matched
         run: echo "Commit message matched the condition."
 
   linux:
@@ -46,10 +47,12 @@ jobs:
             before: yum install -y openssl-devel
             dockeropts: ""
             skip: false
+            features: ""
           - runner: ubuntu-22.04
             target: x86
             before: yum install -y openssl-devel
             skip: true
+            features: ""
             # x86 would require dynamic ORT loading and building ONNX runtime from source is
             # required to achieve that, so for now we cannot support x86 (32-bit)
             # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
@@ -61,41 +64,35 @@ jobs:
               sudo apt-get install pkg-config libssl-dev -y
             dockeropts: "--env OPENSSL_DIR='/usr'"
             skip: false
+            features: "--features openssl-vendored"
           - runner: ubuntu-22.04
             target: armv7
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             skip: true
+            features: "--features openssl-vendored"
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             # via https://github.com/rust-lang/stacker/issues/79
             dockeropts: "--env CFLAGS_s390x_unknown_linux_gnu=-march=z10"
             skip: true
+            features: "--features openssl-vendored"
           - runner: ubuntu-22.04
             target: ppc64le
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             skip: true
+            features: "--features openssl-vendored"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
-      # via https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
-      - name: Calculate openssl-vendored
-        shell: bash
-        id: is-openssl-vendored
-        run: |
-          if [[ "${{ startsWith(matrix.platform.target, 'x86') }}" == "true" ]]; then
-            echo "enabled=" >> $GITHUB_OUTPUT
-          else
-            echo "enabled=--features openssl-vendored" >> $GITHUB_OUTPUT
-          fi
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ steps.is-openssl-vendored.outputs.enabled }}
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: ${{ matrix.platform.target == 'aarch64' && '2_28' || 'auto' }}
           before-script-linux: |
@@ -119,10 +116,12 @@ jobs:
           - runner: windows-latest
             target: x64
             skip: false
+            features: ""
           # Same ONNX issue as x86 on Linux (see ORT comment above)
           - runner: windows-latest
             target: x86
             skip: true
+            features: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -134,7 +133,7 @@ jobs:
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -153,9 +152,11 @@ jobs:
           - runner: macos-13
             target: x86_64
             skip: false
+            features: ""
           - runner: macos-14
             target: aarch64
             skip: false
+            features: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -166,7 +167,7 @@ jobs:
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4

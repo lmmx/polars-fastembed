@@ -50,7 +50,17 @@ jobs:
             features: ""
           - runner: ubuntu-22.04
             target: x86
-            before: yum install -y openssl-devel
+            before: |
+              yum install -y openssl-devel && \
+              yum groupinstall "Development Tools" -y && \
+              yum install glibc-devel.i686 libstdc++-devel.i686 -y && \
+              git clone https://github.com/microsoft/onnxruntime.git && \
+              cd onnxruntime && \
+              git submodule update --init --recursive && \
+              ./build.sh --config RelWithDebInfo \
+                     --build_shared_lib \
+                     --parallel \
+                     --skip_submodule_sync
             skip: false
             features: ""
             # x86 would require dynamic ORT loading and building ONNX runtime from source is

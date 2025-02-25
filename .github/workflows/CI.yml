@@ -46,14 +46,13 @@ jobs:
             before: yum install -y openssl-devel
             dockeropts: ""
             skip: false
+            features: ""
           - runner: ubuntu-22.04
             target: x86
             before: yum install -y openssl-devel
-            skip: true
-            # x86 would require dynamic ORT loading and building ONNX runtime from source is
-            # required to achieve that, so for now we cannot support x86 (32-bit)
-            # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic
-            # see: https://github.com/pykeio/ort/issues/245#issuecomment-2253729331
+            skip: false
+            features: "--features ort-dynamic"
+            # x86 now enabled with dynamic ORT loading
           - runner: ubuntu-22.04
             target: aarch64
             before: |
@@ -61,20 +60,24 @@ jobs:
               sudo apt-get install pkg-config libssl-dev -y
             dockeropts: "--env OPENSSL_DIR='/usr'"
             skip: false
+            features: ""
           - runner: ubuntu-22.04
             target: armv7
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-            skip: true
+            skip: false
+            features: "--features ort-dynamic,openssl-vendored"
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             # via https://github.com/rust-lang/stacker/issues/79
             dockeropts: "--env CFLAGS_s390x_unknown_linux_gnu=-march=z10"
-            skip: true
+            skip: false
+            features: "--features ort-dynamic,openssl-vendored"
           - runner: ubuntu-22.04
             target: ppc64le
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-            skip: true
+            skip: false
+            features: "--features ort-dynamic,openssl-vendored"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -90,12 +93,53 @@ jobs:
           else
             echo "enabled=--features openssl-vendored" >> $GITHUB_OUTPUT
           fi
+      - name: Setup placeholder ONNX libraries for build time
+        run: |
+          # Create directory for the script
+          mkdir -p scripts
+          
+          # Write the placeholder creation script
+          cat > scripts/create_onnx_placeholders.py << 'EOF'
+          #!/usr/bin/env python3
+          import os
+          from pathlib import Path
+          
+          def main():
+              repo_root = Path("rewrite")
+              dirs = ["onnx_placeholder/armv7", "onnx_placeholder/x86", "onnx_placeholder/s390x", 
+                      "onnx_placeholder/ppc64le", "onnx_placeholder/x86_win"]
+              
+              for d in dirs:
+                  os.makedirs(repo_root / d, exist_ok=True)
+              
+              placeholders = [
+                  ("onnx_placeholder/armv7/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/x86/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/s390x/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/ppc64le/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/x86_win/onnxruntime.dll", 1024),
+              ]
+              
+              for file_path, size in placeholders:
+                  with open(repo_root / file_path, "wb") as f:
+                      f.write(b"\0" * size)
+                  print(f"Created placeholder: {file_path}")
+          
+          if __name__ == "__main__":
+              main()
+          EOF
+          
+          # Make the script executable
+          chmod +x scripts/create_onnx_placeholders.py
+          
+          # Run the script
+          python scripts/create_onnx_placeholders.py
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ steps.is-openssl-vendored.outputs.enabled }}
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: ${{ matrix.platform.target == 'aarch64' && '2_28' || 'auto' }}
           before-script-linux: |
@@ -119,22 +163,62 @@ jobs:
           - runner: windows-latest
             target: x64
             skip: false
-          # Same ONNX issue as x86 on Linux (see ORT comment above)
+            features: ""
+          # Now enabled with dynamic ORT loading
           - runner: windows-latest
             target: x86
-            skip: true
+            skip: false
+            features: "--features ort-dynamic"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
+      - name: Setup placeholder ONNX libraries for build time
+        run: |
+          # Create directory for the script
+          mkdir -p scripts
+          
+          # Write the placeholder creation script
+          cat > scripts/create_onnx_placeholders.py << 'EOF'
+          #!/usr/bin/env python3
+          import os
+          from pathlib import Path
+          
+          def main():
+              repo_root = Path("rewrite")
+              dirs = ["onnx_placeholder/armv7", "onnx_placeholder/x86", "onnx_placeholder/s390x", 
+                      "onnx_placeholder/ppc64le", "onnx_placeholder/x86_win"]
+              
+              for d in dirs:
+                  os.makedirs(repo_root / d, exist_ok=True)
+              
+              placeholders = [
+                  ("onnx_placeholder/armv7/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/x86/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/s390x/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/ppc64le/libonnxruntime.so", 1024),
+                  ("onnx_placeholder/x86_win/onnxruntime.dll", 1024),
+              ]
+              
+              for file_path, size in placeholders:
+                  with open(repo_root / file_path, "wb") as f:
+                      f.write(b"\0" * size)
+                  print(f"Created placeholder: {file_path}")
+          
+          if __name__ == "__main__":
+              main()
+          EOF
+          
+          # Run the script
+          python scripts/create_onnx_placeholders.py
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -153,9 +237,11 @@ jobs:
           - runner: macos-13
             target: x86_64
             skip: false
+            features: ""
           - runner: macos-14
             target: aarch64
             skip: false
+            features: ""
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -166,7 +252,7 @@ jobs:
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml
+          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
         uses: actions/upload-artifact@v4

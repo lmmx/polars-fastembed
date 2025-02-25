@@ -26,14 +26,14 @@ pub fn setup_ort_dylib() -> Result<(), String> {
     }
 
     let dylib_path = get_ort_dylib_path()?;
-    
+
     // Set the environment variable for ORT to find the dynamic library
     env::set_var("ORT_DYLIB_PATH", &dylib_path);
     Ok(())
 }
 
 // We don't embed binaries - instead, in CI environment we'll use placeholders
-// Then at runtime in the real environment, a proper ONNX Runtime library 
+// Then at runtime in the real environment, a proper ONNX Runtime library
 // needs to be accessible via ORT_DYLIB_PATH
 static ONNX_LIB_BYTES: &[u8] = &[];
 
@@ -57,21 +57,21 @@ fn get_ort_dylib_path() -> Result<String, String> {
     Err(format!(
         "ONNX Runtime library not found for this platform.\n\
          Please install ONNX Runtime and set ORT_DYLIB_PATH environment variable \
-         to point to the {} file.", 
+         to point to the {} file.",
         ONNX_LIB_NAME
     ))
 }
 
 fn get_standard_lib_paths() -> Vec<PathBuf> {
     let mut paths = Vec::new();
-    
+
     // Add some standard library locations for different platforms
     #[cfg(target_os = "linux")]
     {
         // Common locations on Linux
         paths.push(PathBuf::from("/usr/lib").join(ONNX_LIB_NAME));
         paths.push(PathBuf::from("/usr/local/lib").join(ONNX_LIB_NAME));
-        
+
         // Python environment locations
         if let Ok(python_path) = env::var("PYTHONPATH") {
             for path in python_path.split(':') {
@@ -79,14 +79,14 @@ fn get_standard_lib_paths() -> Vec<PathBuf> {
             }
         }
     }
-    
+
     #[cfg(target_os = "windows")]
     {
         // Common locations on Windows
         if let Ok(program_files) = env::var("ProgramFiles") {
             paths.push(PathBuf::from(program_files).join("ONNX Runtime").join(ONNX_LIB_NAME));
         }
-        
+
         // Python environment
         if let Ok(python_path) = env::var("PYTHONPATH") {
             for path in python_path.split(';') {
@@ -94,14 +94,14 @@ fn get_standard_lib_paths() -> Vec<PathBuf> {
             }
         }
     }
-    
+
     #[cfg(target_os = "macos")]
     {
         // Common locations on macOS
         paths.push(PathBuf::from("/usr/local/lib").join(ONNX_LIB_NAME));
         paths.push(PathBuf::from("/opt/homebrew/lib").join(ONNX_LIB_NAME));
     }
-    
+
     paths
 }
 

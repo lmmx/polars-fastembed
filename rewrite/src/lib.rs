@@ -44,7 +44,7 @@ fn init_ort() {}
 fn _polars_fastembed(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // See discussion 162
     probe_ssl_certs();
-    
+
     // Initialize ONNX Runtime if needed
     init_ort();
 

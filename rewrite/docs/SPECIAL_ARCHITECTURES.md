@@ -1,6 +1,6 @@
 # Special Architecture Support
 
-This document explains how to use `polars-fastembed` on architectures that require
+This document explains how to build `polars-fastembed` on architectures that require
 dynamic loading of ONNX Runtime.
 
 ## Supported Architectures

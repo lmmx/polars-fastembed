@@ -51,7 +51,7 @@ jobs:
           - runner: ubuntu-22.04
             target: x86
             before: yum install -y openssl-devel
-            skip: true
+            skip: false
             features: ""
             # x86 would require dynamic ORT loading and building ONNX runtime from source is
             # required to achieve that, so for now we cannot support x86 (32-bit)

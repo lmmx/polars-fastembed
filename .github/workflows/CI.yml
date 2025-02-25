@@ -57,6 +57,8 @@ jobs:
               git clone https://github.com/microsoft/onnxruntime.git && \
               cd onnxruntime && \
               git submodule update --init --recursive && \
+              export PATH=/opt/python/cp38-cp38/bin:\$PATH && \
+              python -m pip install flatbuffers && \
               ./build.sh --config RelWithDebInfo \
                      --build_shared_lib \
                      --parallel \

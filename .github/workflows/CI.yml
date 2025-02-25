@@ -59,10 +59,16 @@ jobs:
               git submodule update --init --recursive && \
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
               python -m pip install flatbuffers && \
+              mkdir -p /development/libs && \
               ./build.sh --config RelWithDebInfo \
                      --build_shared_lib \
                      --parallel \
-                     --skip_submodule_sync
+                     --skip_submodule_sync \
+                     --allow_running_as_root \
+                     --skip_tests \
+                     --cmake_extra_defines CMAKE_INSTALL_PREFIX=/development/libs/ \
+                     --cmake_extra_defines nnxruntime_BUILD_UNIT_TESTS=OFF \
+                     --target install
             skip: false
             features: ""
             # x86 would require dynamic ORT loading and building ONNX runtime from source is

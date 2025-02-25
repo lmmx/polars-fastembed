@@ -74,7 +74,7 @@ jobs:
             skip: false
             features: ""
             manylinux: "off"
-            container: "https://github.com/cross-rs/cross/pkgs/container/i686-unknown-linux-gnu"
+            container: "ghcr.io/cross-rs/i686-unknown-linux-gnu:latest"
             # x86 would require dynamic ORT loading and building ONNX runtime from source is
             # required to achieve that, so for now we cannot support x86 (32-bit)
             # https://ort.pyke.io/setup/linking#runtime-loading-with-load-dynamic

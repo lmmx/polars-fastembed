@@ -177,6 +177,7 @@ jobs:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
       - name: Setup placeholder ONNX libraries for build time
+        shell: bash
         run: |
           # Create directory for the script
           mkdir -p scripts

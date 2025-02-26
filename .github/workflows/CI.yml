@@ -82,7 +82,7 @@ jobs:
               --env ORT_LIB_PROFILE=RelWithDebInfo
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: ""
             manylinux: "2_28"
             # x86 would require dynamic ORT loading and building ONNX runtime from source is

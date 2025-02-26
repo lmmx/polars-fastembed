@@ -56,7 +56,7 @@ jobs:
               yum groupinstall "Development Tools" -y && \
               yum install glibc-devel.i686 libstdc++-devel.i686 -y && \
               git clone https://github.com/microsoft/onnxruntime.git && \
-              cd onnxruntime && \
+              pushd onnxruntime && \
               git submodule update --init --recursive && \
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
               python -m pip install flatbuffers pysnooper && \
@@ -67,8 +67,9 @@ jobs:
                      --skip_submodule_sync \
                      --allow_running_as_root \
                      --skip_tests \
-                     --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF
-              echo "Built with exit code $?"
+                     --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF && \
+              popd
+            dockeropts: "--env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/RelWithDebInfo --env ORT_LIB_PROFILE=RelWithDebInfo --env ORT_STRATEGY=system --env ORT_PREFER_DYNAMIC_LINK=1"
             skip: false
             features: ""
             manylinux: "2_28"

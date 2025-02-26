@@ -70,6 +70,8 @@ jobs:
                      --cmake_extra_defines CMAKE_C_FLAGS=-m32 \
                      --cmake_extra_defines CMAKE_CXX_FLAGS=-m32 \
                      --cmake_extra_defines CMAKE_ASM_FLAGS=-m32 \
+                     --cmake_extra_defines CMAKE_EXE_LINKER_FLAGS="-m32 -shared-libstdc++" \
+                     --cmake_extra_defines CMAKE_SHARED_LINKER_FLAGS="-m32 -shared-libstdc++" \
                      --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
                      --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF && \
               file build/Linux/RelWithDebInfo/libonnxruntime.so && \

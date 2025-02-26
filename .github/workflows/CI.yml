@@ -52,8 +52,7 @@ jobs:
           - runner: ubuntu-22.04
             target: x86
             before: |
-              yum install -y openssl-devel openssl-devel.i686 pkg-config && \
-              yum groupinstall "Development Tools" -y && \
+              yum install -y openssl-devel.i686 pkg-config && \
               yum install glibc-devel.i686 libstdc++-devel.i686 -y && \
               ln -s /usr/bin/gcc /usr/local/bin/i686-linux-gnu-gcc && \
               git clone https://github.com/microsoft/onnxruntime.git && \
@@ -68,11 +67,16 @@ jobs:
                      --skip_submodule_sync \
                      --allow_running_as_root \
                      --skip_tests \
+                     --cmake_extra_defines CMAKE_C_FLAGS=-m32 && \
+                     --cmake_extra_defines CMAKE_CXX_FLAGS=-m32 && \
+                     --cmake_extra_defines CMAKE_ASM_FLAGS=-m32 && \
                      --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF && \
+              file build/Linux/RelWithDebInfo/libonnxruntime.so && \
               popd
             dockeropts: >
+              --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib
               --env PKG_CONFIG_ALLOW_CROSS=1
-              --env PKG_CONFIG_PATH=/usr/lib64/pkgconfig
+              --env PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib64/pkgconfig
               --env OPENSSL_DIR=/usr
               --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/RelWithDebInfo
               --env ORT_LIB_PROFILE=RelWithDebInfo

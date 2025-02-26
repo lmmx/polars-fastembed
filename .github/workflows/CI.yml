@@ -61,7 +61,6 @@ jobs:
                 -y && \
               ln -s /usr/bin/gcc /usr/bin/i686-linux-gnu-gcc && \
               ls -l /usr/bin/i686-linux-gnu-gcc && \
-              which i686-linux-gnu-gcc && \
               i686-linux-gnu-gcc --version && \
               git clone https://github.com/microsoft/onnxruntime.git && \
               pushd onnxruntime && \
@@ -84,6 +83,8 @@ jobs:
               file build/Linux/RelWithDebInfo/libonnxruntime.so && \
               popd
             dockeropts: >
+              --env CC_i686_unknown_linux_gnu=/usr/bin/gcc
+              --env CFLAGS_i686_unknown_linux_gnu=-m32
               --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib64/pkgconfig

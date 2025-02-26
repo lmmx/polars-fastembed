@@ -77,7 +77,7 @@ jobs:
                      --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
                      --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/i686-toolchain.cmake \
                      --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
-                     --cmake_extra_defines onnxruntime_USE_AVX2=OFF \
+                     --cmake_extra_defines onnxruntime_USE_AVX2=OFF && \
               file build/Linux/RelWithDebInfo/libonnxruntime.so && \
               popd
             dockeropts: >

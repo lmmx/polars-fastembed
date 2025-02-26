@@ -60,7 +60,6 @@ jobs:
               git submodule update --init --recursive && \
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
               python -m pip install flatbuffers pysnooper && \
-              mkdir -p /development/libs install/ && \
               sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
               ./build.sh --config RelWithDebInfo \
                      --build_shared_lib \
@@ -68,9 +67,7 @@ jobs:
                      --skip_submodule_sync \
                      --allow_running_as_root \
                      --skip_tests \
-                     --cmake_extra_defines CMAKE_INSTALL_PREFIX=/development/libs/ \
-                     --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
-                     --target install && \
+                     --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF
               echo "Built with exit code $?"
             skip: false
             features: ""

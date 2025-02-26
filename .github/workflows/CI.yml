@@ -61,7 +61,7 @@ jobs:
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
               python -m pip install flatbuffers pysnooper && \
               mkdir -p /development/libs && \
-              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=1)' tools/ci_build/build.py && \
+              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
               ./build.sh --config RelWithDebInfo \
                      --build_shared_lib \
                      --parallel \

@@ -52,7 +52,7 @@ jobs:
           - runner: ubuntu-22.04
             target: x86
             before: |
-              yum install -y openssl-devel && \
+              yum install -y openssl-devel.i686 pkg-config && \
               yum groupinstall "Development Tools" -y && \
               yum install glibc-devel.i686 libstdc++-devel.i686 -y && \
               ln -s /usr/bin/gcc /usr/local/bin/i686-linux-gnu-gcc && \
@@ -70,7 +70,7 @@ jobs:
                      --skip_tests \
                      --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF && \
               popd
-            dockeropts: "--env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/RelWithDebInfo --env ORT_LIB_PROFILE=RelWithDebInfo --env ORT_STRATEGY=system --env ORT_PREFER_DYNAMIC_LINK=1"
+            dockeropts: "--env PKG_CONFIG_ALLOW_CROSS=1 --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/RelWithDebInfo --env ORT_LIB_PROFILE=RelWithDebInfo --env ORT_STRATEGY=system --env ORT_PREFER_DYNAMIC_LINK=1"
             skip: false
             features: ""
             manylinux: "2_28"

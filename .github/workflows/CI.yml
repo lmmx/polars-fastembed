@@ -82,7 +82,7 @@ jobs:
                      --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/i686-toolchain.cmake \
                      --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
                      --cmake_extra_defines onnxruntime_USE_AVX2=OFF && \
-              file build/Linux/RelWithDebInfo/libonnxruntime.so && \
+              file $(readlink -f build/Linux/RelWithDebInfo/libonnxruntime.so) && \
               popd
             dockeropts: >
               --env CC_i686_unknown_linux_gnu=/usr/bin/i686-linux-gnu-gcc

@@ -59,9 +59,9 @@ jobs:
               cd onnxruntime && \
               git submodule update --init --recursive && \
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
-              python -m pip install flatbuffers && \
+              python -m pip install flatbuffers pysnooper && \
               mkdir -p /development/libs && \
-              sed -i 's/python3 /python3 -m trace --trace /g' build.sh && \
+              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=1)' build.py && \
               ./build.sh --config RelWithDebInfo \
                      --build_shared_lib \
                      --parallel \

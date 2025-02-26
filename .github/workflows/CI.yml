@@ -72,8 +72,8 @@ jobs:
               popd
             dockeropts: >
               --env PKG_CONFIG_ALLOW_CROSS=1
-              --env PKG_CONFIG_PATH='/usr/lib64/pkgconfig'
-              --env OPENSSL_DIR='/usr'
+              --env PKG_CONFIG_PATH=/usr/lib64/pkgconfig
+              --env OPENSSL_DIR=/usr
               --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/RelWithDebInfo
               --env ORT_LIB_PROFILE=RelWithDebInfo
               --env ORT_STRATEGY=system
@@ -90,7 +90,7 @@ jobs:
             before: |
               sudo apt-get update -y && \
               sudo apt-get install pkg-config libssl-dev -y
-            dockeropts: --env OPENSSL_DIR='/usr'
+            dockeropts: --env OPENSSL_DIR=/usr
             skip: false
             features: "--features openssl-vendored"
             manylinux: 2_28
@@ -104,7 +104,7 @@ jobs:
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
             # via https://github.com/rust-lang/stacker/issues/79
-            dockeropts: --env CFLAGS_s390x_unknown_linux_gnu='-march=z10'
+            dockeropts: --env CFLAGS_s390x_unknown_linux_gnu=-march=z10
             skip: true
             features: "--features openssl-vendored"
             manylinux: auto

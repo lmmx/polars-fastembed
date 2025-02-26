@@ -55,6 +55,7 @@ jobs:
               yum install -y openssl-devel && \
               yum groupinstall "Development Tools" -y && \
               yum install glibc-devel.i686 libstdc++-devel.i686 -y && \
+              yum install epel-release -y && \
               yum install centos-release-scl devtoolset-8-toolchain -y && \
               scl enable devtoolset-8 bash && \
               git clone https://github.com/microsoft/onnxruntime.git && \

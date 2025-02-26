@@ -59,6 +59,8 @@ jobs:
                 libstdc++-devel.i686 \
                 gcc-toolset-14-libstdc++-devel.i686 \
                 -y && \
+              which gcc && \
+              ls -l /usr/bin/gcc && \
               ln -s /usr/bin/gcc /usr/bin/i686-linux-gnu-gcc && \
               ls -l /usr/bin/i686-linux-gnu-gcc && \
               /usr/bin/i686-linux-gnu-gcc --version && \

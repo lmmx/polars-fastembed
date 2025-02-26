@@ -52,7 +52,8 @@ jobs:
           - runner: ubuntu-22.04
             target: x86
             before: |
-              yum install -y openssl-devel.i686 pkg-config && \
+              yum install -y openssl-devel openssl-devel.i686 pkg-config && \
+              yum groupinstall "Development Tools" -y && \
               yum install glibc-devel.i686 libstdc++-devel.i686 -y && \
               ln -s /usr/bin/gcc /usr/local/bin/i686-linux-gnu-gcc && \
               git clone https://github.com/microsoft/onnxruntime.git && \
@@ -82,7 +83,7 @@ jobs:
               --env ORT_LIB_PROFILE=RelWithDebInfo
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: true
+            skip: false
             features: ""
             manylinux: "2_28"
             # x86 would require dynamic ORT loading and building ONNX runtime from source is

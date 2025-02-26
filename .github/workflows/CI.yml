@@ -60,7 +60,8 @@ jobs:
                 gcc-toolset-14-libstdc++-devel.i686 \
                 -y && \
               ln -s /usr/bin/gcc /usr/bin/i686-linux-gnu-gcc && \
-              ls -l i686-linux-gnu-gcc && \
+              which i686-linux-gnu-gcc && \
+              i686-linux-gnu-gcc --version && \
               git clone https://github.com/microsoft/onnxruntime.git && \
               pushd onnxruntime && \
               git submodule update --init --recursive && \

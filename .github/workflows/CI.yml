@@ -52,9 +52,13 @@ jobs:
           - runner: ubuntu-22.04
             target: x86
             before: |
-              yum whatprovides '*/libstdc++_nonshared.a' && sdfsdf && \
-              yum install -y openssl-devel.i686 pkg-config && \
-              yum install glibc-devel.i686 libstdc++-devel.i686 libstdc++-static.i686 -y && \
+              yum install \
+                openssl-devel.i686 \
+                pkg-config \
+                glibc-devel.i686 \
+                libstdc++-devel.i686 \
+                gcc-toolset-14-libstdc++-devel.i686 \
+                -y && \
               ln -s /usr/bin/gcc /usr/local/bin/i686-linux-gnu-gcc && \
               git clone https://github.com/microsoft/onnxruntime.git && \
               pushd onnxruntime && \

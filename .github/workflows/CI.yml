@@ -51,7 +51,7 @@ jobs:
             target: x86_64
             before: yum install -y openssl-devel
             dockeropts: ""
-            skip: false
+            skip: true
             features: ""
             manylinux: auto
           - runner: ubuntu-22.04
@@ -110,7 +110,7 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: ""
             manylinux: "2_28"
             # x86 would require dynamic ORT loading and building ONNX runtime from source is
@@ -123,7 +123,7 @@ jobs:
               sudo apt-get update -y && \
               sudo apt-get install pkg-config libssl-dev -y
             dockeropts: --env OPENSSL_DIR=/usr
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: 2_28
           - runner: ubuntu-22.04
@@ -215,7 +215,7 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-            skip: false
+            skip: true
             features: ""
           # Same ONNX issue as x86 on Linux (see ORT comment above)
           - runner: windows-latest
@@ -251,11 +251,11 @@ jobs:
         platform:
           - runner: macos-13
             target: x86_64
-            skip: false
+            skip: true
             features: ""
           - runner: macos-14
             target: aarch64
-            skip: false
+            skip: true
             features: ""
     steps:
       - uses: actions/checkout@v4

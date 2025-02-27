@@ -87,9 +87,9 @@ jobs:
             dockeropts: >
               --env CC_i686_unknown_linux_gnu=/usr/bin/i686-linux-gnu-gcc
               --env CFLAGS_i686_unknown_linux_gnu=-m32
-              --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib:$LIBRARY_PATH
-              --env LD_LIBRARY_PATH=$PWD/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib:$LD_LIBRARY_PATH
-              --env RUSTFLAGS=-Lnative=$PWD/onnxruntime/build/Linux/RelWithDebInfo,-Clink-arg=-v
+              --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib:$LD_LIBRARY_PATH
+              --env RUSTFLAGS="-Lnative=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo -C link-arg=-v"
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib64/pkgconfig
               --env OPENSSL_DIR=/usr

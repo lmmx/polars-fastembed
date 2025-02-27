@@ -25,9 +25,8 @@ jobs:
     if: >
       (
         (
-          github.event_name == 'push'
-        ) || (
-          github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx'
+          (github.event_name == 'push')
+          || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx')
         )
         &&
         (

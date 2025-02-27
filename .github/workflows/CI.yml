@@ -143,11 +143,11 @@ jobs:
           - runner: ubuntu-22.04
             target: ppc64le
             before: |
-              sudo apt-get update -y && 
-              sudo apt-get install -y gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu libssl-dev && 
-              git clone https://github.com/microsoft/onnxruntime.git && 
-              pushd onnxruntime && 
-              git submodule update --init --recursive && 
+              sudo apt-get update -y &&
+              sudo apt-get install -y gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu libssl-dev &&
+              git clone https://github.com/microsoft/onnxruntime.git &&
+              pushd onnxruntime &&
+              git submodule update --init --recursive &&
               ./build.sh \
                 --config Release \
                 --build_shared_lib \
@@ -158,9 +158,9 @@ jobs:
                 --compile_no_warning_as_error \
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/ppc64le-linux-gnu-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
-                --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ && 
-              popd && 
-              mkdir -p rewrite/.cargo && 
+                --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
+              popd &&
+              mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [

@@ -154,6 +154,7 @@ jobs:
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/s390x-linux-gnu-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=s390x-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=s390x-linux-gnu-g++ &&
+              file $(readlink -f build/Linux/Release/libonnxruntime.so) && \
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
@@ -163,6 +164,7 @@ jobs:
                 "-C", "link-arg=-v",
               ]
               EOF
+              cat rewrite/.cargo/config.toml
             dockeropts: >
               --env CC_s390x_unknown_linux_gnu=s390x-linux-gnu-gcc
               --env CXX_s390x_unknown_linux_gnu=s390x-linux-gnu-g++

@@ -136,6 +136,7 @@ jobs:
               git submodule update --init --recursive && \
               python3 --version && \
               python3 -m pip install flatbuffers pysnooper && \
+              python3 -m pip install --upgrade cmake && \
               sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
               ./build.sh \
                 --config Release \
@@ -144,7 +145,7 @@ jobs:
                 --skip_submodule_sync \
                 --allow_running_as_root \
                 --skip_tests \
-                --cmake_extra_defines CMAKE_COMPILE_WARNING_AS_ERROR=OFF \
+                --compile_no_warning_as_error \
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/arm-gnueabihf-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ && \

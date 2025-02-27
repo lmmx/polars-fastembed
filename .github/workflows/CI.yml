@@ -134,10 +134,46 @@ jobs:
             manylinux: auto
           - runner: ubuntu-22.04
             target: s390x
-            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-            # via https://github.com/rust-lang/stacker/issues/79
-            dockeropts: --env CFLAGS_s390x_unknown_linux_gnu=-march=z10
-            skip: true
+            before: |
+              sudo apt-get update -y && 
+              sudo apt-get install -y gcc-s390x-linux-gnu g++-s390x-linux-gnu libssl-dev && 
+              git clone https://github.com/microsoft/onnxruntime.git && 
+              pushd onnxruntime && 
+              git submodule update --init --recursive && 
+              ./build.sh \
+                --config Release \
+                --build_shared_lib \
+                --parallel \
+                --skip_submodule_sync \
+                --allow_running_as_root \
+                --skip_tests \
+                --compile_no_warning_as_error \
+                --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/s390x-linux-gnu-toolchain.cmake \
+                --cmake_extra_defines CMAKE_C_COMPILER=s390x-linux-gnu-gcc \
+                --cmake_extra_defines CMAKE_CXX_COMPILER=s390x-linux-gnu-g++ && 
+              popd && 
+              mkdir -p rewrite/.cargo && 
+              cat > rewrite/.cargo/config.toml << EOF
+              [target.s390x-unknown-linux-gnu]
+              rustflags = [
+                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-v",
+              ]
+              EOF
+            dockeropts: >
+              --env CC_s390x_unknown_linux_gnu=s390x-linux-gnu-gcc
+              --env CXX_s390x_unknown_linux_gnu=s390x-linux-gnu-g++
+              --env CFLAGS_s390x_unknown_linux_gnu=-march=z10
+              --env AR_s390x_unknown_linux_gnu=s390x-linux-gnu-ar
+              --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env PKG_CONFIG_ALLOW_CROSS=1
+              --env OPENSSL_DIR=/usr
+              --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release
+              --env ORT_LIB_PROFILE=Release
+              --env ORT_STRATEGY=system
+              --env ORT_PREFER_DYNAMIC_LINK=1
+            skip: false
             features: "--features openssl-vendored"
             manylinux: auto
           - runner: ubuntu-22.04

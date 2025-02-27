@@ -135,11 +135,11 @@ jobs:
           - runner: ubuntu-22.04
             target: s390x
             before: |
-              sudo apt-get update -y && 
-              sudo apt-get install -y gcc-s390x-linux-gnu g++-s390x-linux-gnu libssl-dev && 
-              git clone https://github.com/microsoft/onnxruntime.git && 
-              pushd onnxruntime && 
-              git submodule update --init --recursive && 
+              sudo apt-get update -y &&
+              sudo apt-get install -y gcc-s390x-linux-gnu g++-s390x-linux-gnu libssl-dev &&
+              git clone https://github.com/microsoft/onnxruntime.git &&
+              pushd onnxruntime &&
+              git submodule update --init --recursive &&
               ./build.sh \
                 --config Release \
                 --build_shared_lib \
@@ -150,9 +150,9 @@ jobs:
                 --compile_no_warning_as_error \
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/s390x-linux-gnu-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=s390x-linux-gnu-gcc \
-                --cmake_extra_defines CMAKE_CXX_COMPILER=s390x-linux-gnu-g++ && 
-              popd && 
-              mkdir -p rewrite/.cargo && 
+                --cmake_extra_defines CMAKE_CXX_COMPILER=s390x-linux-gnu-g++ &&
+              popd &&
+              mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.s390x-unknown-linux-gnu]
               rustflags = [

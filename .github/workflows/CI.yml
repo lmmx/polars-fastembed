@@ -149,6 +149,7 @@ jobs:
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/arm-gnueabihf-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ && \
+              file $(readlink -f build/Linux/Release/libonnxruntime.so) && \
               popd && \
               mkdir -p rewrite/.cargo && \
               cat > rewrite/.cargo/config.toml << EOF
@@ -158,6 +159,7 @@ jobs:
                 "-C", "link-arg=-v",
               ]
               EOF
+              cat rewrite/.cargo/config.toml
             dockeropts: >
               --env CC_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-gcc
               --env CXX_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-g++

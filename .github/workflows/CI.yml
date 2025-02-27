@@ -129,11 +129,11 @@ jobs:
           - runner: ubuntu-22.04
             target: armv7
             before: |
-              sudo apt-get update -y && 
-              sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libc6-dev-armhf-cross libssl-dev && 
-              git clone https://github.com/microsoft/onnxruntime.git && 
-              pushd onnxruntime && 
-              git submodule update --init --recursive && 
+              sudo apt-get update -y &&
+              sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libc6-dev-armhf-cross libssl-dev &&
+              git clone https://github.com/microsoft/onnxruntime.git &&
+              pushd onnxruntime &&
+              git submodule update --init --recursive &&
               ./build.sh \
                 --config Release \
                 --build_shared_lib \
@@ -144,9 +144,9 @@ jobs:
                 --compile_no_warning_as_error \
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/arm-gnueabihf-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-                --cmake_extra_defines CMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ && 
-              popd && 
-              mkdir -p rewrite/.cargo && 
+                --cmake_extra_defines CMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ &&
+              popd &&
+              mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.armv7-unknown-linux-gnueabihf]
               rustflags = [
@@ -155,7 +155,7 @@ jobs:
               ]
               EOF
             dockeropts: >
-              --env CC_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-gcc 
+              --env CC_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-gcc
               --env CXX_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-g++
               --env CFLAGS_armv7_unknown_linux_gnueabihf=-mfpu=vfpv3-d16
               --env AR_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-ar

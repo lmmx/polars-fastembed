@@ -83,13 +83,21 @@ jobs:
                      --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
                      --cmake_extra_defines onnxruntime_USE_AVX2=OFF && \
               file $(readlink -f build/Linux/RelWithDebInfo/libonnxruntime.so) && \
-              popd
+              popd && \
+              mkdir -p rewrite/.cargo && \
+              cat > rewrite/.cargo/config.toml << EOF
+              [target.i686-unknown-linux-gnu]
+              rustflags = [
+                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo",
+                "-C", "link-arg=-v",
+              ]
+              EOF
+              cat rewrite/.cargo/config.toml
             dockeropts: >
               --env CC_i686_unknown_linux_gnu=/usr/bin/i686-linux-gnu-gcc
               --env CFLAGS_i686_unknown_linux_gnu=-m32
               --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib:$LIBRARY_PATH
               --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo:/usr/lib:$LD_LIBRARY_PATH
-              --env RUSTFLAGS="-Lnative=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/RelWithDebInfo -C link-arg=-v"
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib64/pkgconfig
               --env OPENSSL_DIR=/usr

@@ -135,7 +135,8 @@ jobs:
               pushd onnxruntime && \
               git submodule update --init --recursive && \
               export PATH=/opt/python/cp38-cp38/bin:$PATH && \
-              python -m pip install flatbuffers pysnooper && \
+              python3 --version && \
+              python3 -m pip install flatbuffers pysnooper && \
               sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
               ./build.sh \
                 --config Release \
@@ -172,7 +173,7 @@ jobs:
               --env ORT_PREFER_DYNAMIC_LINK=1
             skip: false
             features: "--features openssl-vendored"
-            manylinux: auto
+            manylinux: "2_28"
           - runner: ubuntu-22.04
             target: s390x
             before: sudo apt-get update -y && sudo apt-get install -y libssl-dev

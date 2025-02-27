@@ -183,7 +183,28 @@ jobs:
           # Same ONNX issue as x86 on Linux (see ORT comment above)
           - runner: windows-latest
             target: x86
-            skip: true
+            before: |
+              git clone https://github.com/microsoft/onnxruntime.git
+              cd onnxruntime
+              git submodule update --init --recursive
+              mkdir build-x86
+              cd build-x86
+              cmake -G "Visual Studio 17 2022" -A Win32 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -Donnxruntime_RUN_ONNX_TESTS=OFF -Donnxruntime_BUILD_WINML=OFF -Donnxruntime_USE_FULL_PROTOBUF=OFF -Donnxruntime_BUILD_TESTS=OFF -Donnxruntime_BUILD_UNIT_TESTS=OFF -Donnxruntime_USE_AVX2=OFF ..
+              cmake --build . --config Release
+              cd ..
+              cd ..
+              mkdir -p rewrite/.cargo
+              echo "[target.i686-pc-windows-msvc]" > rewrite/.cargo/config.toml
+              echo "rustflags = [" >> rewrite/.cargo/config.toml
+              echo "  \"-C\", \"link-search=%cd%\\onnxruntime\\build-x86\\Release\"," >> rewrite/.cargo/config.toml
+              echo "  \"-C\", \"link-arg=/verbose\"," >> rewrite/.cargo/config.toml
+              echo "]" >> rewrite/.cargo/config.toml
+            env:
+              ORT_LIB_LOCATION: onnxruntime\build-x86\Release
+              ORT_LIB_PROFILE: Release
+              ORT_STRATEGY: system
+              ORT_PREFER_DYNAMIC_LINK: 1
+            skip: false
             features: ""
     steps:
       - uses: actions/checkout@v4

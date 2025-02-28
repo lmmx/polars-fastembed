@@ -127,8 +127,82 @@ jobs:
             manylinux: 2_28
           - runner: ubuntu-22.04
             target: armv7
-            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-            skip: true
+            before: |
+              sudo apt-get update -y
+              sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libssl-dev python3-pip
+
+              # Clone ONNX Runtime
+              git clone https://github.com/microsoft/onnxruntime.git
+              pushd onnxruntime
+                git submodule update --init --recursive
+                python3 -m pip install --upgrade pip
+                python3 -m pip install flatbuffers pysnooper cmake
+
+                # Optional: Snoop the build script for debug
+                sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py
+
+                # Build ONNX Runtime for 32-bit ARM
+                ./build.sh \
+                  --config Release \
+                  --build_shared_lib \
+                  --parallel \
+                  --skip_submodule_sync \
+                  --allow_running_as_root \
+                  --skip_tests \
+                  --compile_no_warning_as_error \
+                  --arm \
+                  --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
+                  --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+                  --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/armv7-linux-gnueabihf-toolchain.cmake \
+                  --cmake_extra_defines CMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
+                  --cmake_extra_defines CMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++
+
+                # Quick sanity check
+                file $(readlink -f build/Linux/Release/libonnxruntime.so)
+                echo "Checking ONNX Runtime library in build/Linux/Release:"
+                ls -la build/Linux/Release/
+
+                # Confirm we can link to the new library
+                echo 'int main() { return 0; }' > /tmp/test.c
+                arm-linux-gnueabihf-gcc /tmp/test.c -lonnxruntime "-L${PWD}/build/Linux/Release" -o /tmp/linktest
+                echo "Linkage successful!"
+
+                arm-linux-gnueabihf-readelf -d build/Linux/Release/libonnxruntime.so
+              popd
+
+              # Write a .cargo/config.toml to help Cargo link to ONNX Runtime
+              mkdir -p rewrite/.cargo
+              cat > rewrite/.cargo/config.toml << EOF
+              [target.armv7-unknown-linux-gnueabihf]
+              rustflags = [
+                "-C", "link-arg=-Wl,--verbose",
+                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+              ]
+              EOF
+              cat rewrite/.cargo/config.toml
+
+              # Optionally: build.rs can also instruct Cargo about link-search paths
+              cat << 'EOF' > rewrite/build.rs
+              fn main() {
+                  // Tell Cargo to pass these linker flags
+                  println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
+              }
+              EOF
+            dockeropts: >
+              --env CC_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-gcc
+              --env CXX_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-g++
+              --env AR_armv7_unknown_linux_gnueabihf=arm-linux-gnueabihf-ar
+              --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env PKG_CONFIG_ALLOW_CROSS=1
+              --env OPENSSL_DIR=/usr
+              --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release
+              --env ORT_LIB_PROFILE=Release
+              --env ORT_STRATEGY=system
+              --env ORT_PREFER_DYNAMIC_LINK=1
+            skip: false
             features: "--features openssl-vendored"
             manylinux: auto
           - runner: ubuntu-22.04

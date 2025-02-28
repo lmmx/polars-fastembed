@@ -182,14 +182,12 @@ jobs:
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [
                 "-C", "link-arg=-Wl,--verbose",
-                "-C", "link-arg=-Wl,-rpath=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-Wl,--enable-new-dtags",
                 "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-l:libonnxruntime.so"
-
               ]
               EOF
               cat rewrite/.cargo/config.toml

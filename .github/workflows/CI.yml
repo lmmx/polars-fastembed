@@ -168,7 +168,7 @@ jobs:
                 ls -la build/Linux/Release/ &&
               echo "Testing linker:" &&
                 echo 'int main() { return 0; }' > /tmp/test.c &&
-                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest &&
+                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime "-L${PWD}/build/Linux/Release" -o /tmp/linktest &&
                 echo "Linkage successful!" &&
               powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
               popd &&

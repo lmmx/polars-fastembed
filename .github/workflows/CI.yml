@@ -193,13 +193,6 @@ jobs:
               ]
               EOF
               cat rewrite/.cargo/config.toml
-              cat << 'EOF' > rewrite/build.rs
-              fn main() {
-                  // Tell Cargo to pass these linker flags
-                  println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
-                  println!("cargo:rustc-link-lib=onnxruntime");
-              }
-              EOF
             dockeropts: >
               --env CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc
               --env CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++

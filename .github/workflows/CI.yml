@@ -145,6 +145,7 @@ jobs:
             before: |
               sudo apt-get update -y &&
               sudo apt-get install -y gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu libssl-dev &&
+              sudo ln -s "$(command -v powerpc64le-linux-gnu-gcc)" /usr/bin/powerpc64le-unknown-linux-gnu-gcc &&
               git clone https://github.com/microsoft/onnxruntime.git &&
               pushd onnxruntime &&
               git submodule update --init --recursive &&
@@ -155,7 +156,6 @@ jobs:
                 --config Release \
                 --build_shared_lib \
                 --parallel \
-                --target ppc64le \
                 --skip_submodule_sync \
                 --allow_running_as_root \
                 --skip_tests \

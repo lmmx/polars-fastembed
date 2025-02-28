@@ -208,6 +208,7 @@ jobs:
               --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env OPENSSL_DIR=/usr
+              --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release
               --env ORT_SHARED_LIB=libonnxruntime.so.1.22.0
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system

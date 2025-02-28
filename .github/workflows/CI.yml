@@ -166,7 +166,6 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
-              cp build/Linux/Release/libonnxruntime.so* /usr/lib/powerpc64le-linux-gnu/
               cd build/Linux/Release/ &&
                 ln -sf libonnxruntime.so.1.22.0 libonnxruntime.so &&
                 cd - &&
@@ -178,18 +177,29 @@ jobs:
                 echo "Linkage successful!" &&
               powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
               popd &&
-              cp onnxruntime/build/Linux/Release/libonnxruntime.so.* rewrite/ &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [
                 "-C", "link-arg=-Wl,--verbose",
                 "-C", "link-arg=-Wl,-rpath=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-Wl,--enable-new-dtags",
+                "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-                "-C", "link-arg=-Wl,-rpath=$ORIGIN"
+                "-C", "link-arg=-L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-l:libonnxruntime.so"
+
               ]
               EOF
               cat rewrite/.cargo/config.toml
+              cat << 'EOF' > rewrite/build.rs
+              fn main() {
+                  // Tell Cargo to pass these linker flags
+                  println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
+                  println!("cargo:rustc-link-lib=onnxruntime");
+              }
+              EOF
             dockeropts: >
               --env CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc
               --env CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++

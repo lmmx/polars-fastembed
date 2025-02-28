@@ -148,9 +148,9 @@ jobs:
               git clone https://github.com/microsoft/onnxruntime.git &&
               pushd onnxruntime &&
               git submodule update --init --recursive &&
-              python3 -m pip install flatbuffers pysnooper && \
-              python3 -m pip install --upgrade cmake && \
-              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
+              python3 -m pip install flatbuffers pysnooper &&
+              python3 -m pip install --upgrade cmake &&
+              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py &&
               ./build.sh \
                 --config Release \
                 --build_shared_lib \
@@ -164,13 +164,19 @@ jobs:
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/ppc64le-linux-gnu-toolchain.cmake \
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
-              file $(readlink -f build/Linux/Release/libonnxruntime.so) && \
+              file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
+              cd build/Linux/Release/ && ln -sf libonnxruntime.so.1.22.0 libonnxruntime.so && cd - &&
+              echo "Checking ONNX Runtime library:" && ls -la build/Linux/Release/ &&
+              echo "Testing linker:" && powerpc64le-linux-gnu-gcc -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest.o &&
+              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [
-                "-C", "link-arg=-WL,--verbose",
+                "-C", "link-arg=-Wl,--verbose",
+                "-C", "link-arg=-Wl,-rpath=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release"
               ]
               EOF
               cat rewrite/.cargo/config.toml
@@ -180,10 +186,10 @@ jobs:
               --env AR_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-ar
               --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
               --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
-              --env LD_PRELOAD=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release/libonnxruntime.so.1.22.0
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env OPENSSL_DIR=/usr
               --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release
+              --env ORT_SHARED_LIB=libonnxruntime.so.1.22.0
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1

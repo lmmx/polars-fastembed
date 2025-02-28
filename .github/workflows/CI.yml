@@ -141,8 +141,68 @@ jobs:
             manylinux: auto
           - runner: ubuntu-22.04
             target: ppc64le
-            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-            skip: true
+            before: |
+              sudo apt-get update -y &&
+              sudo apt-get install -y gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu libssl-dev &&
+              sudo ln -s "$(command -v powerpc64le-linux-gnu-gcc)" /usr/bin/powerpc64le-unknown-linux-gnu-gcc &&
+              git clone https://github.com/microsoft/onnxruntime.git &&
+              pushd onnxruntime &&
+              git submodule update --init --recursive &&
+              python3 -m pip install flatbuffers pysnooper &&
+              python3 -m pip install --upgrade cmake &&
+              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py &&
+              ./build.sh \
+                --config Release \
+                --build_shared_lib \
+                --parallel \
+                --skip_submodule_sync \
+                --allow_running_as_root \
+                --skip_tests \
+                --compile_no_warning_as_error \
+                --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
+                --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+                --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/ppc64le-linux-gnu-toolchain.cmake \
+                --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
+                --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
+              file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
+              echo "Checking ONNX Runtime library:" &&
+                ls -la build/Linux/Release/ &&
+              echo "Testing linker:" &&
+                echo 'int main() { return 0; }' > /tmp/test.c &&
+                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest &&
+                echo "Linkage successful!" &&
+              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
+              popd &&
+              mkdir -p rewrite/.cargo &&
+              cat > rewrite/.cargo/config.toml << EOF
+              [target.powerpc64le-unknown-linux-gnu]
+              rustflags = [
+                "-C", "link-arg=-Wl,--verbose",
+                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+              ]
+              EOF
+              cat rewrite/.cargo/config.toml
+              cat << 'EOF' > rewrite/build.rs
+              fn main() {
+                  // Tell Cargo to pass these linker flags
+                  println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
+              }
+              EOF
+            dockeropts: >
+              --env CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc
+              --env CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++
+              --env AR_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-ar
+              --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env PKG_CONFIG_ALLOW_CROSS=1
+              --env OPENSSL_DIR=/usr
+              --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release
+              --env ORT_LIB_PROFILE=Release
+              --env ORT_STRATEGY=system
+              --env ORT_PREFER_DYNAMIC_LINK=1
+            skip: false
             features: "--features openssl-vendored"
             manylinux: auto
     steps:

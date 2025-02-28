@@ -170,12 +170,12 @@ jobs:
               popd && \
               mkdir -p rewrite/.cargo && \
               cat > rewrite/.cargo/config.toml <<EOF
-          [target.s390x-unknown-linux-gnu]
-          rustflags = [
-            "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-            "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-          ]
-          EOF
+              [target.s390x-unknown-linux-gnu]
+              rustflags = [
+                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+              ]
+              EOF
               cat rewrite/.cargo/config.toml
             dockeropts: >
               --env CC_s390x_unknown_linux_gnu=s390x-linux-gnu-gcc

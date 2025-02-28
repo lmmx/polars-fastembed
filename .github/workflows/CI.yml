@@ -172,7 +172,7 @@ jobs:
                 echo 'int main() { return 0; }' > /tmp/test.c &&
                 powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime "-L${PWD}/build/Linux/Release" -o /tmp/linktest &&
                 echo "Linkage successful!" &&
-              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
+              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so &&
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF

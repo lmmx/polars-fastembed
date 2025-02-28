@@ -165,15 +165,12 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) && \
-              cd build/Linux/Release && ls -la libonnxruntime* && ln -sf libonnxruntime.so.1 libonnxruntime.so && cd - && \
+              cd build/Linux/Release && mkdir -p /usr/$(gcc --dumpmachine)/lib && cp libonnxruntime.so* /usr/$(gcc --dumpmachine)/lib/ && ldconfig && cd - && \
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [
-                "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-                "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-                "-C", "link-arg=-/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release/libonnxruntime.so",
                 "-C", "link-arg=-WL,--verbose",
               ]
               EOF

@@ -166,9 +166,6 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
-              cd build/Linux/Release/ &&
-                ln -sf libonnxruntime.so.1.22.0 libonnxruntime.so &&
-                cd - &&
               echo "Checking ONNX Runtime library:" &&
                 ls -la build/Linux/Release/ &&
               echo "Testing linker:" &&
@@ -193,6 +190,13 @@ jobs:
               ]
               EOF
               cat rewrite/.cargo/config.toml
+              cat << 'EOF' > rewrite/build.rs
+              fn main() {
+                  // Tell Cargo to pass these linker flags
+                  println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
+                  println!("cargo:rustc-link-lib=onnxruntime");
+              }
+              EOF
             dockeropts: >
               --env CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc
               --env CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++

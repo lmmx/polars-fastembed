@@ -165,6 +165,7 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) && \
+              cd build/Linux/Release && ls -la libonnxruntime* && ln -sf libonnxruntime.so.1 libonnxruntime.so && cd - && \
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF

@@ -182,7 +182,6 @@ jobs:
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [
                 "-C", "link-arg=-Wl,--verbose",
-                "-C", "link-arg=-Wl,-rpath=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
               ]
               EOF

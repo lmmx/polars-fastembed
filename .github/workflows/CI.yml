@@ -169,9 +169,9 @@ jobs:
                 ls -la build/Linux/Release/ &&
               echo "Testing linker:" &&
                 echo 'int main() { return 0; }' > /tmp/test.c &&
-                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest &&
+                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime "-L${PWD}/build/Linux/Release" -o /tmp/linktest &&
                 echo "Linkage successful!" &&
-              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
+              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so &&
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
@@ -194,8 +194,8 @@ jobs:
               --env CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc
               --env CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++
               --env AR_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-ar
-              --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
-              --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env OPENSSL_DIR=/usr
               --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release

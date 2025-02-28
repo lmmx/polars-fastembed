@@ -165,7 +165,6 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) && \
-              cd build/Linux/Release && mkdir -p /usr/$(gcc --dumpmachine)/lib && cp libonnxruntime.so* /usr/$(gcc --dumpmachine)/lib/ && ldconfig && cd - && \
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
@@ -181,6 +180,7 @@ jobs:
               --env AR_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-ar
               --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
               --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env LD_PRELOAD=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release/libonnxruntime.so.1.22.0
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env OPENSSL_DIR=/usr
               --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release

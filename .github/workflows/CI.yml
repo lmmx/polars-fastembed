@@ -160,17 +160,19 @@ jobs:
                 --allow_running_as_root \
                 --skip_tests \
                 --compile_no_warning_as_error \
+                --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
                 --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
                 --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/ppc64le-linux-gnu-toolchain.cmake \
-                --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
+                --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
+                --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
               echo "Checking ONNX Runtime library:" &&
                 ls -la build/Linux/Release/ &&
               echo "Testing linker:" &&
                 echo 'int main() { return 0; }' > /tmp/test.c &&
-                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime "-L${PWD}/build/Linux/Release" -o /tmp/linktest &&
+                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest &&
                 echo "Linkage successful!" &&
-              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so &&
+              powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
               popd &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
@@ -193,8 +195,8 @@ jobs:
               --env CC_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-gcc
               --env CXX_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-g++
               --env AR_powerpc64le_unknown_linux_gnu=powerpc64le-linux-gnu-ar
-              --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
-              --env LD_LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
               --env PKG_CONFIG_ALLOW_CROSS=1
               --env OPENSSL_DIR=/usr
               --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release

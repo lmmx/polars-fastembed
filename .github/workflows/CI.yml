@@ -155,6 +155,7 @@ jobs:
                 --config Release \
                 --build_shared_lib \
                 --parallel \
+                --target ppc64le \
                 --skip_submodule_sync \
                 --allow_running_as_root \
                 --skip_tests \

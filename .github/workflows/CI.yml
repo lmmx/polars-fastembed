@@ -178,13 +178,15 @@ jobs:
                 echo "Linkage successful!" &&
               powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
               popd &&
+              cp onnxruntime/build/Linux/Release/libonnxruntime.so.* rewrite/ &&
               mkdir -p rewrite/.cargo &&
               cat > rewrite/.cargo/config.toml << EOF
               [target.powerpc64le-unknown-linux-gnu]
               rustflags = [
                 "-C", "link-arg=-Wl,--verbose",
                 "-C", "link-arg=-Wl,-rpath=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-                "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release"
+                "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-Wl,-rpath=$ORIGIN"
               ]
               EOF
               cat rewrite/.cargo/config.toml

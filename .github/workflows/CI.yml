@@ -182,7 +182,6 @@ jobs:
                 "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-                "-C", "link-arg=-L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-l:libonnxruntime.so"
 
               ]

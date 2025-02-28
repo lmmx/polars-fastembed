@@ -197,7 +197,6 @@ jobs:
               fn main() {
                   // Tell Cargo to pass these linker flags
                   println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
-                  println!("cargo:rustc-link-lib=onnxruntime");
               }
               EOF
             dockeropts: >

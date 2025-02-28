@@ -134,9 +134,62 @@ jobs:
             manylinux: auto
           - runner: ubuntu-22.04
             target: s390x
-            before: sudo apt-get update -y && sudo apt-get install -y libssl-dev
-            # via https://github.com/rust-lang/stacker/issues/79
-            dockeropts: --env CFLAGS_s390x_unknown_linux_gnu=-march=z10
+            before: |
+              sudo apt-get update -y &&
+              sudo apt-get install -y \
+                s390x-linux-gnu-gcc \
+                s390x-linux-gnu-g++ \
+                libssl-dev \
+                pkg-config && \
+              sudo ln -s "$(command -v s390x-linux-gnu-gcc)" /usr/bin/s390x-unknown-linux-gnu-gcc && \
+              git clone https://github.com/microsoft/onnxruntime.git && \
+              pushd onnxruntime && \
+              git submodule update --init --recursive && \
+              python3 -m pip install --upgrade flatbuffers pysnooper cmake && \
+              sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
+              ./build.sh \
+                --config Release \
+                --build_shared_lib \
+                --parallel \
+                --skip_submodule_sync \
+                --allow_running_as_root \
+                --skip_tests \
+                --compile_no_warning_as_error \
+                --cmake_extra_defines CMAKE_VERBOSE_MAKEFILE=ON \
+                --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+                --cmake_extra_defines CMAKE_TOOLCHAIN_FILE=$PWD/../scripts/s390x-linux-gnu-toolchain.cmake \
+                --cmake_extra_defines CMAKE_C_COMPILER=s390x-linux-gnu-gcc \
+                --cmake_extra_defines CMAKE_CXX_COMPILER=s390x-linux-gnu-g++ && \
+              echo "Checking ONNX Runtime library:" && \
+              file "$(readlink -f build/Linux/Release/libonnxruntime.so)" && \
+              echo "Testing linker:" && \
+                echo 'int main() { return 0; }' > /tmp/test.c && \
+                s390x-linux-gnu-gcc /tmp/test.c -lonnxruntime "-L${PWD}/build/Linux/Release" -o /tmp/linktest && \
+                echo "Linkage successful!" && \
+                s390x-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so && \
+              popd && \
+              mkdir -p rewrite/.cargo && \
+              cat > rewrite/.cargo/config.toml <<EOF
+          [target.s390x-unknown-linux-gnu]
+          rustflags = [
+            "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+            "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+          ]
+          EOF
+              cat rewrite/.cargo/config.toml
+            dockeropts: >
+              --env CC_s390x_unknown_linux_gnu=s390x-linux-gnu-gcc
+              --env CXX_s390x_unknown_linux_gnu=s390x-linux-gnu-g++
+              --env AR_s390x_unknown_linux_gnu=s390x-linux-gnu-ar
+              --env LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LIBRARY_PATH
+              --env LD_LIBRARY_PATH=$PWD/onnxruntime/build/Linux/Release:/usr/lib:$LD_LIBRARY_PATH
+              --env PKG_CONFIG_ALLOW_CROSS=1
+              --env OPENSSL_DIR=/usr
+              --env ORT_LIB_LOCATION=$PWD/onnxruntime/build/Linux/Release
+              --env ORT_LIB_PROFILE=Release
+              --env ORT_STRATEGY=system
+              --env ORT_PREFER_DYNAMIC_LINK=1
+              --env CFLAGS_s390x_unknown_linux_gnu=-march=z10
             skip: false
             features: "--features openssl-vendored"
             manylinux: auto

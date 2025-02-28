@@ -5,8 +5,8 @@ set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
 set(CMAKE_ASM_COMPILER arm-linux-gnueabihf-gcc)
 
-set(CMAKE_C_FLAGS "-march=armv7")
-set(CMAKE_CXX_FLAGS "-march=armv7")
+set(CMAKE_C_FLAGS "-march=armv7-a -mfpu=neon -mfloat-abi=hard")
+set(CMAKE_CXX_FLAGS "-march=armv7-a -mfpu=neon -mfloat-abi=hard")
 
 set(CMAKE_FIND_ROOT_PATH /usr/arm-linux-gnueabihf)
 

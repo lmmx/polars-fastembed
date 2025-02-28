@@ -166,6 +166,7 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
+              cp build/Linux/Release/libonnxruntime.so* /usr/lib/powerpc64le-linux-gnu/
               cd build/Linux/Release/ &&
                 ln -sf libonnxruntime.so.1.22.0 libonnxruntime.so &&
                 cd - &&

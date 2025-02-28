@@ -188,6 +188,8 @@ jobs:
                 "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
+                "-C", "link-arg=-l:libonnxruntime.so"
+
               ]
               EOF
               cat rewrite/.cargo/config.toml

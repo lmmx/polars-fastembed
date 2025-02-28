@@ -173,8 +173,8 @@ jobs:
               rustflags = [
                 "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
                 "-C", "link-arg=-Wl,-rpath,/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
-                "-C", "link-arg=-lonnxruntime",
-                "-C", "link-arg=-v",
+                "-C", "link-arg=-/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release/libonnxruntime.so",
+                "-C", "link-arg=-WL,--verbose",
               ]
               EOF
               cat rewrite/.cargo/config.toml

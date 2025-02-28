@@ -165,9 +165,15 @@ jobs:
                 --cmake_extra_defines CMAKE_C_COMPILER=powerpc64le-linux-gnu-gcc \
                 --cmake_extra_defines CMAKE_CXX_COMPILER=powerpc64le-linux-gnu-g++ &&
               file $(readlink -f build/Linux/Release/libonnxruntime.so) &&
-              cd build/Linux/Release/ && ln -sf libonnxruntime.so.1.22.0 libonnxruntime.so && cd - &&
-              echo "Checking ONNX Runtime library:" && ls -la build/Linux/Release/ &&
-              echo "Testing linker:" && powerpc64le-linux-gnu-gcc -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest.o &&
+              cd build/Linux/Release/ &&
+                ln -sf libonnxruntime.so.1.22.0 libonnxruntime.so &&
+                cd - &&
+              echo "Checking ONNX Runtime library:" &&
+                ls -la build/Linux/Release/ &&
+              echo "Testing linker:" &&
+                echo 'int main() { return 0; }' > /tmp/test.c &&
+                powerpc64le-linux-gnu-gcc /tmp/test.c -lonnxruntime -L/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release -o /tmp/linktest &&
+                echo "Linkage successful!" &&
               powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so.1.22.0 &&
               popd &&
               mkdir -p rewrite/.cargo &&

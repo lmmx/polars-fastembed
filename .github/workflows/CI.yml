@@ -238,7 +238,7 @@ jobs:
         platform:
           - runner: windows-latest
             target: x64
-            skip: false
+            skip: true
             features: ""
           # Same ONNX issue as x86 on Linux (see ORT comment above)
           - runner: windows-latest

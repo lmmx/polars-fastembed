@@ -76,33 +76,36 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
         }
     }
 
-    // Convert Vec<Option<Vec<f32>>> to a Polars Array(Float32, dim) column
-    use polars::chunked_array::FixedSizeListChunked;
-    
-    // Create Vec<Series> of f32 values first
-    let mut float_series = Vec::with_capacity(row_embeddings.len());
-    for opt_embedding in row_embeddings {
-        match opt_embedding {
-            Some(vec) => {
-                // Check if vector has correct length
-                if vec.len() != dim {
+    // First create a List(Float32) series
+    use polars::chunked_array::builder::ListPrimitiveChunkedBuilder;
+
+    let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
+        s.name(),
+        row_embeddings.len(),
+        row_embeddings.len() * dim, // estimate size based on dimension
+        DataType::Float32,
+    );
+
+    for opt_vec in row_embeddings {
+        match opt_vec {
+            Some(v) => {
+                // Verify the dimension matches what we expect
+                if v.len() != dim {
                     polars_bail!(ComputeError:
-                        format!("Embedding dimension mismatch: expected {}, got {}", dim, vec.len())
+                        format!("Embedding dimension mismatch: expected {}, got {}", dim, v.len())
                     );
                 }
-                float_series.push(Series::new("".into(), vec));
+                builder.append_slice(&v);
             },
-            None => float_series.push(Series::new_null("".into(), 0)),
+            None => builder.append_null(),
         }
     }
     
-    // Create FixedSizeListChunked from the Series
-    let array = FixedSizeListChunked::new(s.name(), float_series, dim as u64)
-        .map_err(|e| {
-            PolarsError::ComputeError(
-                format!("Failed to create Array column: {}", e).into()
-            )
-        })?;
-
-    Ok(array.into_series())
+    let list_series = builder.finish().into_series();
+    
+    // Now convert the List(Float32) to Array(Float32, dim)
+    let array_series = list_series.clone().list().to_array(dim)
+        .map_err(|e| PolarsError::ComputeError(format!("Failed to convert list to array: {}", e).into()))?;
+    
+    Ok(array_series)
 }

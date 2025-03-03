@@ -76,7 +76,7 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
         }
     }
 
-    // First create a List(Float32) series and return it
+    // First create a List(Float32) series using the original approach
     use polars::chunked_array::builder::ListPrimitiveChunkedBuilder;
 
     let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
@@ -104,7 +104,8 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
     // Create the List series
     let list_series = builder.finish().into_series();
 
-    // When we return this series, the List type will be converted to Array
-    // in the output_type_func (list_idx_dtype) already set to Array
-    Ok(list_series)
+    // Cast it to the Array type with the known dimension
+    let array_series = list_series.cast(&DataType::Array(Box::new(DataType::Float32), dim))?;
+
+    Ok(array_series)
 }

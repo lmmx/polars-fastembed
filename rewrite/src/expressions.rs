@@ -14,11 +14,11 @@ pub struct EmbedTextKwargs {
 fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
     // Get the embedder to retrieve the dimension
     let embedder = get_or_load_model(&None)?;
-    
+
     // Use the extension trait to get the dimension
     use crate::registry::TextEmbeddingExt;
     let dim = embedder.get_dimension();
-    
+
     // Return a fixed-size array type with the retrieved dimension
     Ok(Field::new(
         input_fields[0].name.clone(),
@@ -42,7 +42,7 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
 
     // Look up or load the requested model (or the "default" if None)
     let embedder = get_or_load_model(&kwargs.model_id)?;
-    
+
     // Use the extension trait to get the embedding dimension
     use crate::registry::TextEmbeddingExt;
     let dim = embedder.get_dimension();
@@ -76,11 +76,11 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
         }
     }
 
-    // First create a List(Float32) series
+    // First create a List(Float32) series and return it
     use polars::chunked_array::builder::ListPrimitiveChunkedBuilder;
 
     let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
-        s.name(),
+        s.name().clone(),
         row_embeddings.len(),
         row_embeddings.len() * dim, // estimate size based on dimension
         DataType::Float32,
@@ -100,12 +100,11 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
             None => builder.append_null(),
         }
     }
-    
+
+    // Create the List series
     let list_series = builder.finish().into_series();
-    
-    // Now convert the List(Float32) to Array(Float32, dim)
-    let array_series = list_series.clone().list().to_array(dim)
-        .map_err(|e| PolarsError::ComputeError(format!("Failed to convert list to array: {}", e).into()))?;
-    
-    Ok(array_series)
+
+    // When we return this series, the List type will be converted to Array
+    // in the output_type_func (list_idx_dtype) already set to Array
+    Ok(list_series)
 }

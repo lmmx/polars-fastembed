@@ -23,13 +23,12 @@ pub trait TextEmbeddingExt {
 }
 
 impl TextEmbeddingExt for TextEmbedding {
-    fn get_dimension(&self) -> PolarsResult<usize> {
+    fn get_dimension(&self) -> usize {
         // Run a test embedding to determine the dimension
         let test_text = "dimension_test";
         match self.embed(vec![test_text], None) {
-            Ok(embeddings) if !embeddings.is_empty() => Ok(embeddings[0].len()),
-            Ok(_) => Err(PolarsError::ComputeError("Embedding succeeded but returned no results".into())),
-            Err(e) => Err(PolarsError::ComputeError(format!("Failed to determine embedding dimension: {}", e).into())),
+            Ok(embeddings) if !embeddings.is_empty() => embeddings[0].len(),
+            _ => panic!("Failed to determine embedding dimension"),
         }
     }
 }

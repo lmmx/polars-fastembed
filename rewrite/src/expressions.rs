@@ -14,11 +14,11 @@ pub struct EmbedTextKwargs {
 fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
     // Get the embedder to retrieve the dimension
     let embedder = get_or_load_model(&None)?;
-
+    
     // Use the extension trait to get the dimension
     use crate::registry::TextEmbeddingExt;
-    let dim = embedder.get_dimension()?;
-
+    let dim = embedder.get_dimension();
+    
     // Return a fixed-size array type with the retrieved dimension
     Ok(Field::new(
         input_fields[0].name.clone(),
@@ -42,10 +42,10 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
 
     // Look up or load the requested model (or the "default" if None)
     let embedder = get_or_load_model(&kwargs.model_id)?;
-
+    
     // Use the extension trait to get the embedding dimension
     use crate::registry::TextEmbeddingExt;
-    let dim = embedder.get_dimension()?;
+    let dim = embedder.get_dimension();
 
     let ca = s.str()?; // Polars string chunked array
 
@@ -77,22 +77,32 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
     }
 
     // Convert Vec<Option<Vec<f32>>> to a Polars Array(Float32, dim) column
-    use polars::chunked_array::builder::ArrayBuilder;
-
-    // Create an array builder with the fixed dimension
-    let mut builder = ArrayBuilder::new(
-        s.name(),
-        ca.len(),
-        DataType::Float32,
-        dim,
-    );
-
+    use polars::chunked_array::FixedSizeListChunked;
+    
+    // Create Vec<Series> of f32 values first
+    let mut float_series = Vec::with_capacity(row_embeddings.len());
     for opt_embedding in row_embeddings {
         match opt_embedding {
-            Some(vec) => builder.append_values(&vec),
-            None => builder.append_null(),
+            Some(vec) => {
+                // Check if vector has correct length
+                if vec.len() != dim {
+                    polars_bail!(ComputeError:
+                        format!("Embedding dimension mismatch: expected {}, got {}", dim, vec.len())
+                    );
+                }
+                float_series.push(Series::new("".into(), vec));
+            },
+            None => float_series.push(Series::new_null("".into(), 0)),
         }
     }
+    
+    // Create FixedSizeListChunked from the Series
+    let array = FixedSizeListChunked::new(s.name(), float_series, dim as u64)
+        .map_err(|e| {
+            PolarsError::ComputeError(
+                format!("Failed to create Array column: {}", e).into()
+            )
+        })?;
 
-    Ok(builder.finish().into_series())
+    Ok(array.into_series())
 }

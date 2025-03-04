@@ -103,7 +103,7 @@ class FastEmbedPlugin:
             columns = [columns]
 
         # Optionally concat multiple columns
-        if join_columns:
+        if join_columns and len(columns) > 1:
             self._df = self._df.with_columns(
                 pl.concat_str(columns, separator=" ").alias("_text_to_embed"),
             )
@@ -116,7 +116,7 @@ class FastEmbedPlugin:
             embed_text(text_col, model_id=model_name).alias(output_column),
         )
 
-        if join_columns:
+        if join_columns and len(columns) > 1:
             new_df = new_df.drop("_text_to_embed")
         return new_df
 
@@ -149,24 +149,41 @@ class FastEmbedPlugin:
         q_df = pl.DataFrame({"_q": [query]}).with_columns(
             embed_text("_q", model_id=model_name).alias("_q_emb"),
         )
-        # Extract that single embedding as a python list
-        q_emb_list = q_df.select("_q_emb").item()  # e.g. [0.123, 0.456, ...]
 
-        if q_emb_list is None:
+        # Extract that single embedding as a numpy array
+        # This handles both list and array dtype columns
+        q_emb = q_df.select("_q_emb").item()
+
+        if q_emb is None:
             raise ValueError("Failed to embed query (got null).")
 
-        q_emb_arr = np.array(q_emb_list, dtype=np.float32)
+        # Convert to numpy array if it's not already
+        if isinstance(q_emb, list):
+            q_emb_arr = np.array(q_emb, dtype=np.float32)
+        else:
+            # It's already an array
+            q_emb_arr = q_emb
 
         # 2) For each row, compute similarity
-        row_embs = self._df[embedding_column].to_list()  # list of lists
+        # Need to handle both list and array dtypes
         similarities = []
         q_norm = np.linalg.norm(q_emb_arr)
 
-        for emb_list in row_embs:
-            if emb_list is None:
+        # Get the column as a Python object (list or array)
+        embs = self._df[embedding_column]
+
+        for emb in embs:
+            if emb is None:
                 similarities.append(float("nan"))
                 continue
-            e_arr = np.array(emb_list, dtype=np.float32)
+
+            # Convert to numpy array if not already
+            if isinstance(emb, list):
+                e_arr = np.array(emb, dtype=np.float32)
+            else:
+                # It's already an array
+                e_arr = emb
+
             if similarity_metric == "cosine":
                 sim = float(np.dot(e_arr, q_emb_arr) / (np.linalg.norm(e_arr) * q_norm))
             elif similarity_metric == "dot":

@@ -17,6 +17,22 @@ use crate::model_suggestions::from_model_code;
 static MODEL_REGISTRY: Lazy<RwLock<HashMap<String, Arc<TextEmbedding>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
+// Extension trait to add dimension-related methods to TextEmbedding
+pub trait TextEmbeddingExt {
+    fn get_dimension(&self) -> usize;
+}
+
+impl TextEmbeddingExt for TextEmbedding {
+    fn get_dimension(&self) -> usize {
+        // Run a test embedding to determine the dimension
+        let test_text = "dimension_test";
+        match self.embed(vec![test_text], None) {
+            Ok(embeddings) if !embeddings.is_empty() => embeddings[0].len(),
+            _ => panic!("Failed to determine embedding dimension"),
+        }
+    }
+}
+
 // /// Parse e.g. ["CPUExecutionProvider"] => vec![ExecutionProviderDispatch::CPU]
 // fn parse_providers(provider_names: &[String]) -> Result<Vec<ExecutionProviderDispatch>, String> {
 //     let mut parsed = Vec::with_capacity(provider_names.len());

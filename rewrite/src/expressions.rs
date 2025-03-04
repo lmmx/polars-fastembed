@@ -12,14 +12,22 @@ pub struct EmbedTextKwargs {
 }
 
 fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    // Get the embedder to retrieve the dimension
+    let embedder = get_or_load_model(&None)?;
+
+    // Use the extension trait to get the dimension
+    use crate::registry::TextEmbeddingExt;
+    let dim = embedder.get_dimension();
+
+    // Return a fixed-size array type with the retrieved dimension
     Ok(Field::new(
         input_fields[0].name.clone(),
-        DataType::List(Box::new(DataType::Float32))
+        DataType::Array(Box::new(DataType::Float32), dim)
     ))
 }
 
 /// Polars expression that reads a String column, embeds each row with fastembed-rs,
-/// and returns a List(Float32). We bail if the column is not String.
+/// and returns a fixed-size Array(Float32, dim). We bail if the column is not String.
 #[polars_expr(output_type_func=list_idx_dtype)]
 pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Series> {
     // 1) Grab the input Series
@@ -35,6 +43,10 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
     // Look up or load the requested model (or the "default" if None)
     let embedder = get_or_load_model(&kwargs.model_id)?;
 
+    // Use the extension trait to get the embedding dimension
+    use crate::registry::TextEmbeddingExt;
+    let dim = embedder.get_dimension();
+
     let ca = s.str()?; // Polars string chunked array
 
     // Embed row-by-row (TODO: batch for performance)
@@ -42,7 +54,20 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
     for opt_str in ca.into_iter() {
         if let Some(text) = opt_str {
             match embedder.embed([text].to_vec(), None) {
-                Ok(mut results) => row_embeddings.push(results.pop()),
+                Ok(mut results) => {
+                    if let Some(embedding) = results.pop() {
+                        // Verify the dimension matches what we expect
+                        if embedding.len() == dim {
+                            row_embeddings.push(Some(embedding));
+                        } else {
+                            polars_bail!(ComputeError:
+                                format!("Embedding dimension mismatch: expected {}, got {}", dim, embedding.len())
+                            );
+                        }
+                    } else {
+                        row_embeddings.push(None);
+                    }
+                },
                 Err(_err) => row_embeddings.push(None),
             }
         } else {
@@ -51,22 +76,36 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
         }
     }
 
-    // 5) Convert Vec<Option<Vec<f32>>> to a Polars List(Float32) column
+    // First create a List(Float32) series using the original approach
     use polars::chunked_array::builder::ListPrimitiveChunkedBuilder;
 
     let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
-        "embedding".into(),
+        s.name().clone(),
         row_embeddings.len(),
-        0,
+        row_embeddings.len() * dim, // estimate size based on dimension
         DataType::Float32,
     );
 
     for opt_vec in row_embeddings {
         match opt_vec {
-            Some(v) => builder.append_slice(&v),
+            Some(v) => {
+                // Verify the dimension matches what we expect
+                if v.len() != dim {
+                    polars_bail!(ComputeError:
+                        format!("Embedding dimension mismatch: expected {}, got {}", dim, v.len())
+                    );
+                }
+                builder.append_slice(&v);
+            },
             None => builder.append_null(),
         }
     }
 
-    Ok(builder.finish().into_series())
+    // Create the List series
+    let list_series = builder.finish().into_series();
+
+    // Cast it to the Array type with the known dimension
+    let array_series = list_series.cast(&DataType::Array(Box::new(DataType::Float32), dim))?;
+
+    Ok(array_series)
 }

@@ -141,7 +141,6 @@ class FastEmbedPlugin:
         q_df = pl.DataFrame({"_q": [query]}).with_columns(
             embed_text("_q", model_id=model_name).alias("_q_emb"),
         )
-        q_emb = q_df.select("_q_emb").item()
 
         # Cross join to pair query with all rows
         result_df = self._df.join(q_df.select("_q_emb"), how="cross")

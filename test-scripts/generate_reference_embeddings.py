@@ -90,12 +90,12 @@ def main():
     print("\n🔍 Quick verification:")
     print(f"  - Shape: {np.array(embeddings_list).shape}")
     print(
-        f"  - First embedding preview: [{embeddings_list[0][0]:.6f}, {embeddings_list[0][1]:.6f}, ...]"
+        f"  - First embedding preview: [{embeddings_list[0][0]:.6f}, {embeddings_list[0][1]:.6f}, ...]",
     )
 
     print("\n🎉 Reference embeddings generated successfully!")
     print(
-        "   You can now run your polars-fastembed tests without needing fastembed as a dependency."
+        "   You can now run your polars-fastembed tests without needing fastembed as a dependency.",
     )
 
 

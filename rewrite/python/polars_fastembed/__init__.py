@@ -4,8 +4,8 @@ import inspect
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import numpy as np
 import polars as pl
+import polars_distance as pld
 from polars.api import register_dataframe_namespace
 from polars.plugins import register_plugin_function
 
@@ -133,78 +133,37 @@ class FastEmbedPlugin:
         """
         Sort/filter rows by similarity to the given `query` using `model_name`.
         The embeddings for each row are read from `embedding_column`.
-
-        This method:
-         1) Embeds the query via the same Rust plugin (so uses the same model).
-         2) For each row in `embedding_column`, calculates similarity to that query.
-         3) Sorts (desc) by similarity.
-            Optionally filters by `threshold`.
-            Optionally keeps top-k rows.
-            Optionally adds a "similarity" column.
         """
         if embedding_column not in self._df.columns:
             raise ValueError(f"Column '{embedding_column}' not found in DataFrame.")
 
-        # 1) Embed the query in a single-row DF
+        # 1) Embed the query and add to each row
         q_df = pl.DataFrame({"_q": [query]}).with_columns(
             embed_text("_q", model_id=model_name).alias("_q_emb"),
         )
 
-        # Extract that single embedding as a numpy array
-        # This handles both list and array dtype columns
-        q_emb = q_df.select("_q_emb").item()
+        # Cross join to pair query with all rows
+        result_df = self._df.join(q_df.select("_q_emb"), how="cross")
 
-        if q_emb is None:
-            raise ValueError("Failed to embed query (got null).")
-
-        # Convert to numpy array if it's not already
-        if isinstance(q_emb, list):
-            q_emb_arr = np.array(q_emb, dtype=np.float32)
+        if similarity_metric == "cosine":
+            similarity_expr = 1 - pld.col(embedding_column).dist_arr.cosine("_q_emb")
+        elif similarity_metric == "dot":
+            similarity_expr = pl.col(embedding_column).dot(pl.col("_q_emb"))
         else:
-            # It's already an array
-            q_emb_arr = q_emb
+            raise ValueError(f"Unknown similarity metric: {similarity_metric}")
 
-        # 2) For each row, compute similarity
-        # Need to handle both list and array dtypes
-        similarities = []
-        q_norm = np.linalg.norm(q_emb_arr)
-
-        # Get the column as a Python object (list or array)
-        embs = self._df[embedding_column]
-
-        for emb in embs:
-            if emb is None:
-                similarities.append(float("nan"))
-                continue
-
-            # Convert to numpy array if not already
-            if isinstance(emb, list):
-                e_arr = np.array(emb, dtype=np.float32)
-            else:
-                # It's already an array
-                e_arr = emb
-
-            if similarity_metric == "cosine":
-                sim = float(np.dot(e_arr, q_emb_arr) / (np.linalg.norm(e_arr) * q_norm))
-            elif similarity_metric == "dot":
-                sim = float(np.dot(e_arr, q_emb_arr))
-            else:
-                raise ValueError(f"Unknown similarity metric: {similarity_metric}")
-            similarities.append(sim)
-
-        # 3) Create a new DF with similarity
-        result_df = self._df
         if add_similarity_column:
-            result_df = result_df.with_columns(pl.Series("similarity", similarities))
+            result_df = result_df.with_columns(similarity_expr.alias("similarity"))
 
-        # 4) Optionally threshold
+        # Clean up temp column
+        result_df = result_df.drop("_q_emb")
+
+        # 3) Filter, sort, and limit
         if threshold is not None:
             result_df = result_df.filter(pl.col("similarity") >= threshold)
 
-        # 5) Sort desc by similarity
         result_df = result_df.sort("similarity", descending=True)
 
-        # 6) Keep top-k
         if k is not None:
             result_df = result_df.head(k)
 

@@ -323,7 +323,7 @@ jobs:
             features: "--features openssl-vendored"
             manylinux: auto
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -339,7 +339,7 @@ jobs:
             ${{ matrix.platform.before }}
           docker-options: ${{ matrix.platform.dockeropts }}
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: matrix.platform.skip != true
         with:
           name: wheels-linux-${{ matrix.platform.target }}
@@ -362,7 +362,7 @@ jobs:
             skip: true
             features: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -375,7 +375,7 @@ jobs:
           args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: matrix.platform.skip != true
         with:
           name: wheels-windows-${{ matrix.platform.target }}
@@ -397,7 +397,7 @@ jobs:
             skip: false
             features: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -409,7 +409,7 @@ jobs:
           args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: matrix.platform.skip != true
         with:
           name: wheels-macos-${{ matrix.platform.target }}
@@ -419,14 +419,14 @@ jobs:
     needs: [check-commit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist --manifest-path rewrite/Cargo.toml
       - name: Upload sdist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: wheels-sdist
           path: dist
@@ -444,9 +444,9 @@ jobs:
       # Used to generate artifact attestation
       attestations: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v3
         with:
           subject-path: "wheels-*/*"
       - name: Publish to PyPI

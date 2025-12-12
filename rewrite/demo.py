@@ -14,6 +14,7 @@ df = pl.DataFrame(
 )
 
 model_id = "Xenova/bge-small-en-v1.5"
+# model_id = "Qdrant/bge-small-en-v1.5-onnx-Q"
 
 # 1) Register a model
 #    Optionally specify GPU: providers=["CUDAExecutionProvider"]

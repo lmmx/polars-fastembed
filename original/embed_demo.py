@@ -1,5 +1,4 @@
 import polars as pl
-
 from polars_fastembed import register_model
 
 # Create a sample DataFrame

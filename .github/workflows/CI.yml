@@ -323,7 +323,7 @@ jobs:
             features: "--features openssl-vendored"
             manylinux: auto
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -362,7 +362,7 @@ jobs:
             skip: true
             features: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -397,7 +397,7 @@ jobs:
             skip: false
             features: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -419,7 +419,7 @@ jobs:
     needs: [check-commit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:

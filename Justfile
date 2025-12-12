@@ -1,3 +1,4 @@
+import ".just/ci.just"
 import ".just/commit.just"
 import ".just/ship.just"
 

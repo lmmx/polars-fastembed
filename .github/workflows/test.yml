@@ -23,43 +23,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+
       - name: Get Python versions from pyproject.toml
         id: get-versions
-        run: |
-          set -euo pipefail
-          MIN_VERSION=$(uvx --from=toml-cli toml get --toml-path=pyproject.toml project.requires-python | sed 's/>=//;s/"//g')
-
-          LIST=$(uv python list --all-versions --output-format json)
-
-          # Excluding 3.15.0a2 specifically as numpy won't build on it (needed for pyarrow)
-          CPYTHON_VERSIONS=$(echo "$LIST" | jq -c --arg min "$MIN_VERSION" '
-            ($min | split(".") | {major: .[0]|tonumber, minor: .[1]|tonumber}) as $minv |
-            [.[] | {v:.version_parts, t:.variant, impl:.implementation, full:.version}]
-            | unique_by([.v.minor,.t])
-            | map(select(
-                (.impl == "cpython") and
-                (.v.major == 3) and
-                (.v.minor >= $minv.minor) and
-                (.full != "3.15.0a2")
-              ))
-            | map(select(.t != "freethreaded")) # Delete this line to include FT variants
-            | map("\(.v.major).\(.v.minor)\(if .t=="freethreaded" then "t" else "" end)")')
-
-          # PYPY_VERSIONS=$(echo "$LIST" | jq -c --arg min "$MIN_VERSION" '
-          #   ($min | split(".") | {major: .[0]|tonumber, minor: .[1]|tonumber}) as $minv |
-          #   [.[] | {v:.version_parts, t:.variant, impl:.implementation}]
-          #   | unique_by([.v.minor,.impl])
-          #   | map(select(
-          #       (.impl == "pypy") and
-          #       (.v.major == 3) and
-          #       (.v.minor >= $minv.minor)
-          #     ))
-          #   | map("pypy-\(.v.major).\(.v.minor)")')
-
-          # versions=$(jq -nc --argjson a "$CPYTHON_VERSIONS" --argjson b "$PYPY_VERSIONS" '$a + $b')
-          versions=$(jq -nc --argjson a "$CPYTHON_VERSIONS" '$a')
-
-          echo "python-versions=$versions" >> $GITHUB_OUTPUT
+        run: just ci_version_matrix >> $GITHUB_OUTPUT
 
   test:
     needs: get-python-versions
@@ -71,6 +40,11 @@ jobs:
         python-version: ${{ fromJson(needs.get-python-versions.outputs.python-versions) }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+        with:
+          tool: just@1.38.0,echo-comment@0.2.0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7

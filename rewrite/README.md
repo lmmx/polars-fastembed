@@ -13,15 +13,14 @@ A Polars plugin for embedding DataFrames
 ## Installation
 
 ```bash
-pip install polars-fastembed
+uv pip install polars-fastembed
 ```
 
-> The `polars` dependency is required but not included in the package by default.
-> It is shipped as an optional extra which can be activated by passing it in square brackets:
-> ```bash
-> pip install polars-fastembed[polars]          # most users can install regular Polars
-> pip install polars-fastembed[polars-lts-cpu]  # for backcompatibility with older CPUs
-> ```
+Or for backcompatibility with older CPUs:
+
+```bash
+uv pip install polars-fastembed[rtcompat]
+```
 
 ## Features
 

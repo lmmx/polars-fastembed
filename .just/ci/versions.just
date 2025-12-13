@@ -9,19 +9,24 @@ _avail_pythons:
 _avail_cpythons:
     #!/usr/bin/env -S bash -euo pipefail
     MIN_VERSION=$(just _min_version)
-    just _avail_pythons | jq -c --arg min "$MIN_VERSION" '
+    # numpy doesn't build on 3.15 yet
+    MAX_VERSION="3.14"
+    just _avail_pythons | jq -c --arg min "$MIN_VERSION" --arg max "$MAX_VERSION" '
       ($min | split(".") | {major: .[0]|tonumber, minor: .[1]|tonumber}) as $minv |
+      ($max | split(".") | {major: .[0]|tonumber, minor: .[1]|tonumber}) as $maxv |
       [.[] | {v:.version_parts, t:.variant, impl:.implementation, full:.version}]
       | unique_by([.v.minor,.t])
       | map(select(
          (.impl == "cpython") and
          (.v.major == 3) and
-         (.v.minor >= $minv.minor)
+         (.v.minor >= $minv.minor) and
+         (.v.minor <= $maxv.minor)
         ))
       | map(select(.t != "freethreaded"))
       | map("\(.v.major).\(.v.minor)")'
 
-_avail_pypys:
+# PyPy disabled - builds never finish
+_avail_pypys_DISABLED:
     #!/usr/bin/env -S bash -euo pipefail
     MIN_VERSION=$(just _min_version)
     # pyo3 0.23.4 supports PyPy up to 3.10
@@ -38,6 +43,10 @@ _avail_pypys:
           (.v.minor <= $maxv.minor)
         ))
       | map("pypy\(.v.major).\(.v.minor)")'
+
+_avail_pypys:
+    #!/usr/bin/env -S bash -euo pipefail
+    echo "[]"
 
 ci_version_matrix:
     #!/usr/bin/env -S bash -euo pipefail

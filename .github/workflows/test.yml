@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   get-python-versions:
     runs-on: ubuntu-latest
@@ -19,40 +22,27 @@ jobs:
       python-versions: ${{ steps.get-versions.outputs.python-versions }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-
-      - name: Install just
-        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
-
+      - uses: astral-sh/setup-uv@v7
+      - uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070
       - name: Get Python versions from pyproject.toml
         id: get-versions
         run: just ci_version_matrix >> $GITHUB_OUTPUT
 
-  test:
-    needs: get-python-versions
+  get-test-platforms:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ${{ fromJson(needs.get-python-versions.outputs.python-versions) }}
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.get-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070
+      - name: Get test platform matrix
+        id: get-matrix
+        run: echo "matrix=$(just ci-test-matrix | jq -c)" >> $GITHUB_OUTPUT
 
-      - name: Install just
-        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
-        with:
-          tool: just@1.38.0,echo-comment@0.2.0
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: uv sync --group test
-
-      - name: Run tests
-        run: $(uv python find) -m pytest
+  test:
+    needs: [get-python-versions, get-test-platforms]
+    uses: ./.github/workflows/test-workflow.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      platform-matrix: ${{ needs.get-test-platforms.outputs.matrix }}

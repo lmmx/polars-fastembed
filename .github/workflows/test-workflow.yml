@@ -1,0 +1,61 @@
+name: Test workflow
+
+on:
+  workflow_call:
+    inputs:
+      python-versions:
+        required: true
+        type: string
+      platform-matrix:
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(inputs.python-versions) }}
+        platform: ${{ fromJson(inputs.platform-matrix).include }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+        with:
+          workspaces: rewrite
+          key: ${{ matrix.platform.os }}-${{ matrix.platform.target }}-test
+
+      - name: Setup platform dependencies (Linux)
+        if: matrix.platform.os == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build wheel
+        run: |
+          uv pip install maturin
+          cd rewrite
+          maturin build --release ${{ matrix.platform.features }}
+
+      - name: Install wheel and test dependencies
+        shell: bash
+        run: |
+          uv pip install target/wheels/*.whl
+          uv sync --group test
+
+      - name: Run tests
+        run: uv run pytest

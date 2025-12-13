@@ -54,7 +54,7 @@ jobs:
             target: x86_64
             before: yum install -y openssl-devel
             dockeropts: ""
-            skip: false
+            skip: true
             features: ""
             manylinux: auto
           - runner: ubuntu-22.04

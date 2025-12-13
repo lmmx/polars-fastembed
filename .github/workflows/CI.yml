@@ -190,7 +190,7 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: auto
           - runner: ubuntu-22.04
@@ -257,7 +257,7 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: auto
           - runner: ubuntu-22.04
@@ -323,7 +323,7 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: auto
     steps:

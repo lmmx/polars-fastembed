@@ -14,6 +14,10 @@ on:
       - "*"
   pull_request:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy Release"]
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -50,7 +54,7 @@ jobs:
             target: x86_64
             before: yum install -y openssl-devel
             dockeropts: ""
-            skip: false
+            skip: true
             features: ""
             manylinux: auto
           - runner: ubuntu-22.04
@@ -71,7 +75,7 @@ jobs:
               git clone https://github.com/microsoft/onnxruntime.git && \
               pushd onnxruntime && \
               git submodule update --init --recursive && \
-              export PATH=/opt/python/cp38-cp38/bin:$PATH && \
+              export PATH=/opt/python/cp310-cp310/bin:$PATH && \
               python -m pip install flatbuffers pysnooper && \
               sed -i '/def main():/i import pysnooper\n\n@pysnooper.snoop(depth=3)' tools/ci_build/build.py && \
               ./build.sh \
@@ -186,7 +190,7 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: auto
           - runner: ubuntu-22.04
@@ -253,7 +257,7 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: auto
           - runner: ubuntu-22.04
@@ -319,11 +323,15 @@ jobs:
               --env ORT_LIB_PROFILE=Release
               --env ORT_STRATEGY=system
               --env ORT_PREFER_DYNAMIC_LINK=1
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: auto
     steps:
       - uses: actions/checkout@v5
+      - uses: rui314/setup-mold@725a8794d15fc7563f59595bd9556495c0564878 # v1
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          key: ${{ runner.os }}-${{ matrix.platform.target }}-manylinux
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -332,7 +340,7 @@ jobs:
         if: matrix.platform.skip != true
         with:
           target: ${{ matrix.platform.target }}
-          args: --release --out dist --find-interpreter --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
+          args: --release --out dist --interpreter $(just ci_interpreter_list) --manifest-path rewrite/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: ${{ matrix.platform.manylinux }}
           before-script-linux: |
@@ -363,6 +371,10 @@ jobs:
             features: ""
     steps:
       - uses: actions/checkout@v5
+      - uses: rui314/setup-mold@725a8794d15fc7563f59595bd9556495c0564878 # v1
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          key: ${{ runner.os }}-${{ matrix.platform.target }}
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -388,7 +400,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - runner: macos-13
+          - runner: macos-14
             target: x86_64
             skip: false
             features: ""
@@ -433,6 +445,7 @@ jobs:
 
   release:
     name: Release
+    environment: pypi
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
     needs: [linux, windows, macos, sdist]
@@ -452,8 +465,6 @@ jobs:
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: PyO3/maturin-action@v1
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*

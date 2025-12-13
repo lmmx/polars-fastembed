@@ -1,11 +1,11 @@
 [build-system]
-requires = ["maturin[patchelf]>=1.0,<2.0", "polars>=1.36.0"]
+requires = ["maturin>=1.0,<2.0", "patchelf>=0.17.2.4; sys_platform == 'linux'", "polars>=1.36.0"]
 build-backend = "maturin"
 
 [dependency-groups]
 build = [
   "maturin>=1.10.2",
-  "patchelf>=0.17.2.4"
+  "patchelf>=0.17.2.4; sys_platform == 'linux'"
 ]
 test = [
   "inline-snapshot>=0.31.1",

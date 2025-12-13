@@ -1,0 +1,65 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  get-python-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python-versions: ${{ steps.get-versions.outputs.python-versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+      - uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070
+      - name: Get Python versions from pyproject.toml
+        id: get-versions
+        run: just ci_version_matrix >> $GITHUB_OUTPUT
+
+  test-linux:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: ubuntu-22.04
+      os: linux
+      target: x86_64
+
+  test-macos-arm:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: macos-14
+      os: macos
+      target: aarch64
+
+  test-macos-x86:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: macos-15
+      os: macos
+      target: x86_64
+
+  test-windows:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: windows-latest
+      os: windows
+      target: x64

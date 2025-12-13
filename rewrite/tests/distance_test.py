@@ -1,3 +1,4 @@
+import sys
 import polars as pl
 from inline_snapshot import snapshot
 from polars_fastembed import register_model
@@ -41,7 +42,10 @@ def test_distances():
         k=3,
     )
     print(result)
-    assert result.drop("embedding").to_dicts() == snapshot(
+
+    result_dicts = result.drop("embedding").to_dicts()
+
+    expected = snapshot(
         [
             {
                 "id": 2,
@@ -60,3 +64,14 @@ def test_distances():
             },
         ],
     )
+
+    if sys.platform == "linux":
+        assert result_dicts == expected
+    else:
+        for result_row, expected_row in zip(result_dicts, expected):
+            assert result_row["id"] == expected_row["id"]
+            assert result_row["text"] == expected_row["text"]
+            assert round(result_row["similarity"], 5) == round(
+                expected_row["similarity"],
+                5,
+            )

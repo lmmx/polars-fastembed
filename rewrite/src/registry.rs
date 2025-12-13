@@ -17,7 +17,16 @@ use crate::model_suggestions::from_model_code;
 static MODEL_REGISTRY: Lazy<RwLock<HashMap<String, Arc<TextEmbedding>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
-// Extension trait to add dimension-related methods to TextEmbedding
+/// Lazily-initialized default model for when no model_id is specified.
+/// This avoids repeated model loads when calling embed_text without an explicit model.
+static DEFAULT_MODEL: Lazy<Arc<TextEmbedding>> = Lazy::new(|| {
+    Arc::new(
+        TextEmbedding::try_new(InitOptions::default().with_show_download_progress(false))
+            .expect("Failed to load default embedding model"),
+    )
+});
+
+/// Extension trait to add dimension-related methods to TextEmbedding.
 pub trait TextEmbeddingExt {
     fn get_dimension(&self) -> usize;
 }
@@ -123,15 +132,13 @@ pub fn list_models() -> PyResult<Vec<String>> {
     Ok(map.keys().cloned().collect())
 }
 
-/// Return an Arc<TextEmbedding> from the registry. If None, load the default fastembed model.
-/// If Some(...) is not found in the registry, we load it via from_model_code(...) or error.
+/// Return an Arc<TextEmbedding> from the registry.
+/// - If `model_name` is None, returns the cached default model.
+/// - If `model_name` is Some but not in the registry, loads and caches it.
 pub fn get_or_load_model(model_name: &Option<String>) -> PolarsResult<Arc<TextEmbedding>> {
-    // If no model name is provided, use fastembed's default
+    // If no model name is provided, return the cached default
     if model_name.is_none() {
-        let embedder = TextEmbedding::try_new(InitOptions::default()).map_err(|e| {
-            PolarsError::ComputeError(format!("Failed to load default model: {e}").into())
-        })?;
-        return Ok(Arc::new(embedder));
+        return Ok(DEFAULT_MODEL.clone());
     }
     let name = model_name.as_ref().unwrap();
 

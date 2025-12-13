@@ -28,21 +28,38 @@ jobs:
         id: get-versions
         run: just ci_version_matrix >> $GITHUB_OUTPUT
 
-  get-test-platforms:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      matrix: ${{ steps.get-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070
-      - name: Get test platform matrix
-        id: get-matrix
-        run: echo "matrix=$(just ci-test-matrix | jq -c)" >> $GITHUB_OUTPUT
-
-  test:
-    needs: [get-python-versions, get-test-platforms]
-    uses: ./.github/workflows/test-workflow.yml
+  test-linux:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
     with:
       python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
-      platform-matrix: ${{ needs.get-test-platforms.outputs.matrix }}
+      runner: ubuntu-latest
+      os: linux
+      target: x86_64-unknown-linux-gnu
+
+  test-macos-arm:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: macos-14
+      os: macos
+      target: aarch64-apple-darwin
+
+  test-macos-x86:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: macos-13
+      os: macos
+      target: x86_64-apple-darwin
+
+  test-windows:
+    needs: get-python-versions
+    uses: ./.github/workflows/test-platform.yml
+    with:
+      python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
+      runner: windows-latest
+      os: windows
+      target: x86_64-pc-windows-msvc

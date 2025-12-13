@@ -62,7 +62,7 @@ jobs:
         run: uv sync --group test
 
       - name: Build and install extension
-        run: uv run maturin develop --release ${{ inputs.features }}
+        run: uv run --no-sync --frozen maturin develop --release ${{ inputs.features }}
 
       - name: Run tests
-        run: uv run pytest
+        run: uv run --no-sync --frozen pytest -s -v

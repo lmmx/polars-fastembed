@@ -10,7 +10,7 @@ release bump_level="patch":
     fi
 
     # 📈 Bump the version in pyproject.toml (patch/minor/major: {{ bump_level }})
-    uv version --bump {{ bump_level }}
+    uv version --frozen --bump {{ bump_level }}
 
     # 📦 Stage all changes (including the version bump)
     git add --all

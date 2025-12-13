@@ -28,6 +28,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ${{ fromJson(inputs.python-versions) }}
+    defaults:
+      run:
+        working-directory: rewrite
     steps:
       - uses: actions/checkout@v4
 
@@ -46,25 +49,20 @@ jobs:
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
         with:
           workspaces: rewrite
-          key: ${{ inputs.os }}-${{ inputs.target }}-test
+          key: ${{ inputs.os }}-${{ inputs.target }}-${{ matrix.python-version }}
 
       - name: Setup platform dependencies (Linux)
         if: inputs.os == 'linux'
+        working-directory: .
         run: |
           sudo apt-get update -y
           sudo apt-get install -y pkg-config libssl-dev
 
-      - name: Build wheel
-        run: |
-          uv pip install maturin
-          cd rewrite
-          maturin build --release ${{ inputs.features }}
+      - name: Create venv and install dependencies
+        run: uv sync --group test
 
-      - name: Install wheel and test dependencies
-        shell: bash
-        run: |
-          uv pip install target/wheels/*.whl
-          uv sync --group test
+      - name: Build and install extension
+        run: uv run maturin develop --release ${{ inputs.features }}
 
       - name: Run tests
         run: uv run pytest

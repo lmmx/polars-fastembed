@@ -33,9 +33,9 @@ jobs:
     uses: ./.github/workflows/test-platform.yml
     with:
       python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
-      runner: ubuntu-latest
+      runner: ubuntu-22.04
       os: linux
-      target: x86_64-unknown-linux-gnu
+      target: x86_64
 
   test-macos-arm:
     needs: get-python-versions
@@ -44,16 +44,16 @@ jobs:
       python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
       runner: macos-14
       os: macos
-      target: aarch64-apple-darwin
+      target: aarch64
 
   test-macos-x86:
     needs: get-python-versions
     uses: ./.github/workflows/test-platform.yml
     with:
       python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
-      runner: macos-13
+      runner: macos-15
       os: macos
-      target: x86_64-apple-darwin
+      target: x86_64
 
   test-windows:
     needs: get-python-versions
@@ -62,4 +62,4 @@ jobs:
       python-versions: ${{ needs.get-python-versions.outputs.python-versions }}
       runner: windows-latest
       os: windows
-      target: x86_64-pc-windows-msvc
+      target: x64

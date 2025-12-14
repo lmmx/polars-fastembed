@@ -1,3 +1,3 @@
 [working-directory: 'benchmark']
-bench:
-    uv run --frozen benchmark
+bench *args:
+    uv run --frozen benchmark {{args}}

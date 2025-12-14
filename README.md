@@ -8,6 +8,7 @@ This repository contains the Rust implementation of **polars-fastembed**, a Pola
 
 ## Performance Notes
 
+- Benchmarking shows `Xenova/all-MiniLM-L6-v2` is the fastest
 - No batching or explicit parallelism is used in the Rust embedding code
 
 ### Embed
@@ -46,6 +47,7 @@ To embed all Python PEPs and retrieve a query, polars-fastembed takes about a mi
 
 ```
 uv run --frozen benchmark
+Using model: Xenova/all-MiniLM-L6-v2
 Embedded 708 documents.
 Top 5 retrieval results:
 shape: (5, 4)
@@ -54,19 +56,17 @@ shape: (5, 4)
 │ --- ┆ ---                    ┆ ---                             ┆ ---        │
 │ i64 ┆ str                    ┆ array[f32, 384]                 ┆ f32        │
 ╞═════╪════════════════════════╪═════════════════════════════════╪════════════╡
-│ 593 ┆ PEP: 593               ┆ [-0.058784, 0.016706, … 0.0438… ┆ 0.779388   │
-│     ┆ Title: Flexible funct… ┆                                 ┆            │
-│ 677 ┆ PEP: 677               ┆ [-0.07416, -0.004228, … 0.0494… ┆ 0.774187   │
-│     ┆ Title: Callable Type … ┆                                 ┆            │
-│ 589 ┆ PEP: 589               ┆ [-0.100245, 0.044359, … 0.0525… ┆ 0.772979   │
+│ 589 ┆ PEP: 589               ┆ [-0.007806, 0.044277, … 0.0958… ┆ 0.520573   │
 │     ┆ Title: TypedDict: Typ… ┆                                 ┆            │
-│ 603 ┆ PEP: 603               ┆ [-0.121382, -0.024193, … -0.00… ┆ 0.767088   │
-│     ┆ Title: Adding a froze… ┆                                 ┆            │
-│ 646 ┆ PEP: 646               ┆ [-0.063982, -0.012509, … 0.032… ┆ 0.76216    │
-│     ┆ Title: Variadic Gener… ┆                                 ┆            │
+│ 455 ┆ PEP: 455               ┆ [-0.112585, 0.064582, … 0.0891… ┆ 0.509375   │
+│     ┆ Title: Adding a key-t… ┆                                 ┆            │
+│ 705 ┆ PEP: 705               ┆ [-0.007666, -0.005967, … 0.118… ┆ 0.501325   │
+│     ┆ Title: TypedDict: Rea… ┆                                 ┆            │
+│ 764 ┆ PEP: 764               ┆ [-0.038508, 0.046109, … 0.0555… ┆ 0.491672   │
+│     ┆ Title: Inline typed d… ┆                                 ┆            │
+│ 814 ┆ PEP: 814               ┆ [-0.114546, 0.023868, … 0.0395… ┆ 0.486509   │
+│     ┆ Title: Add frozendict… ┆                                 ┆            │
 └─────┴────────────────────────┴─────────────────────────────────┴────────────┘
-
-real    0m55.144s
-user    17m47.700s
-sys     0m1.624s
 ```
+
+- Embedding all 708 Python PEPs and retrieval on query "Typed dictionaries and mappings" takes 30s

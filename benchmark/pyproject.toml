@@ -1,0 +1,30 @@
+[build-system]
+requires = ["uv_build>=0.9.15,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+  "pdbpp>=0.11.7"
+]
+
+[project]
+name = "benchmark"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+  {name = "Louis Maddox", email = "louismmx@gmail.com"}
+]
+requires-python = ">=3.13"
+dependencies = [
+  "polars-fastembed"
+]
+
+[project.scripts]
+benchmark = "benchmark:main"
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.uv.sources]
+polars-fastembed = {path = "../polars-fastembed", editable = true}

@@ -1,0 +1,10 @@
+PEP: 210
+Title: Decoupling the Interpreter Loop
+Author: David Ascher <davida@activestate.com>
+Status: Rejected
+Type: Standards Track
+Created: 15-Jul-2000
+Python-Version: 2.1
+Post-History:
+
+.. rejected::

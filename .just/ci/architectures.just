@@ -45,15 +45,15 @@ _setup-linux-x86:
     popd
 
     # Configure Cargo for cross-compilation
-    mkdir -p rewrite/.cargo
-    cat > rewrite/.cargo/config.toml << 'EOF'
+    mkdir -p polars-fastembed/.cargo
+    cat > polars-fastembed/.cargo/config.toml << 'EOF'
     [target.i686-unknown-linux-gnu]
     rustflags = [
       "-C", "link-search=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
       "-C", "link-arg=-v",
     ]
     EOF
-    cat rewrite/.cargo/config.toml
+    cat polars-fastembed/.cargo/config.toml
 
 # Linux aarch64 setup (runs on host before container)
 _setup-linux-aarch64:
@@ -95,8 +95,8 @@ _setup-linux-armv7:
     arm-linux-gnueabihf-readelf -d build/Linux/Release/libonnxruntime.so
     popd
 
-    mkdir -p rewrite/.cargo
-    cat > rewrite/.cargo/config.toml << 'EOF'
+    mkdir -p polars-fastembed/.cargo
+    cat > polars-fastembed/.cargo/config.toml << 'EOF'
     [target.armv7-unknown-linux-gnueabihf]
     rustflags = [
       "-C", "link-arg=-Wl,--verbose",
@@ -105,9 +105,9 @@ _setup-linux-armv7:
       "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
     ]
     EOF
-    cat rewrite/.cargo/config.toml
+    cat polars-fastembed/.cargo/config.toml
 
-    cat << 'EOF' > rewrite/build.rs
+    cat << 'EOF' > polars-fastembed/build.rs
     fn main() {
         println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
     }
@@ -149,8 +149,8 @@ _setup-linux-s390x:
     s390x-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so
     popd
 
-    mkdir -p rewrite/.cargo
-    cat > rewrite/.cargo/config.toml << 'EOF'
+    mkdir -p polars-fastembed/.cargo
+    cat > polars-fastembed/.cargo/config.toml << 'EOF'
     [target.s390x-unknown-linux-gnu]
     rustflags = [
       "-C", "link-arg=-Wl,--verbose",
@@ -159,9 +159,9 @@ _setup-linux-s390x:
       "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
     ]
     EOF
-    cat rewrite/.cargo/config.toml
+    cat polars-fastembed/.cargo/config.toml
 
-    cat << 'EOF' > rewrite/build.rs
+    cat << 'EOF' > polars-fastembed/build.rs
     fn main() {
         println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
     }
@@ -203,8 +203,8 @@ _setup-linux-ppc64le:
     powerpc64le-linux-gnu-readelf -d build/Linux/Release/libonnxruntime.so
     popd
 
-    mkdir -p rewrite/.cargo
-    cat > rewrite/.cargo/config.toml << 'EOF'
+    mkdir -p polars-fastembed/.cargo
+    cat > polars-fastembed/.cargo/config.toml << 'EOF'
     [target.powerpc64le-unknown-linux-gnu]
     rustflags = [
       "-C", "link-arg=-Wl,--verbose",
@@ -213,9 +213,9 @@ _setup-linux-ppc64le:
       "-C", "link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release",
     ]
     EOF
-    cat rewrite/.cargo/config.toml
+    cat polars-fastembed/.cargo/config.toml
 
-    cat << 'EOF' > rewrite/build.rs
+    cat << 'EOF' > polars-fastembed/build.rs
     fn main() {
         println!("cargo:rustc-link-search=native=/home/runner/work/polars-fastembed/polars-fastembed/onnxruntime/build/Linux/Release");
     }

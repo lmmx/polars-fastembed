@@ -1,48 +1,72 @@
 # Polars FastEmbed
 
-A Polars plugin for embedding DataFrames.
+A high-performance Polars plugin for embedding DataFrames, implemented in Rust.
 
----
+## Overview
 
-This repo contains 2 subdirectories:
+This repository contains the Rust implementation of **polars-fastembed**, a Polars plugin for fast text embedding and retrieval directly inside Polars expressions.
 
-- `original` - the Python version, working
-- `rewrite` - the Rust rewrite, 1.4x - 2.1x faster than the original
+## Performance Notes
 
-## Benchmark
+- No batching or explicit parallelism is used in the Rust embedding code
 
-- Note that this is without any batching/parallelism in the Rust embedding code!
+### Embed
 
-#### Embed
+`hyperfine` timings from running the `embed_demo.py` script with `--warmup 10`
 
-```python
-$ bash benchmark_both_embed.sh
-Benchmark 1: python-plugin
-  Time (mean ± σ):      1.165 s ±  0.018 s    [User: 2.945 s, System: 0.179 s]
-  Range (min … max):    1.129 s …  1.198 s    10 runs
-
-Benchmark 2: rust-rewrite
-  Time (mean ± σ):     540.4 ms ±   2.8 ms    [User: 1738.9 ms, System: 155.0 ms]
-  Range (min … max):   535.5 ms … 545.3 ms    10 runs
-
-Summary
-  rust-rewrite ran
-    2.16 ± 0.04 times faster than python-plugin
+```bash
+bash benchmark_embed.sh
 ```
 
-#### Embed + retrieve
+```py
+Benchmark 1: embed
+  Time (mean ± σ):     591.9 ms ±  15.5 ms    [User: 1779.2 ms, System: 171.1 ms]
+  Range (min … max):   573.2 ms … 615.1 ms    10 runs
+```
 
-```python
-$ bash benchmark_both_embed_and_retrieve.sh
-Benchmark 1: python-plugin
-  Time (mean ± σ):      1.159 s ±  0.007 s    [User: 3.029 s, System: 0.172 s]
-  Range (min … max):    1.149 s …  1.170 s    10 runs
+### Embed + Retrieve
 
-Benchmark 2: rust-rewrite
-  Time (mean ± σ):     845.7 ms ±  17.2 ms    [User: 4446.5 ms, System: 238.7 ms]
-  Range (min … max):   817.0 ms … 865.8 ms    10 runs
+`hyperfine` timings from running the `demo.py` script with `--warmup 10`
 
-Summary
-  rust-rewrite ran
-    1.37 ± 0.03 times faster than python-plugin
+```bash
+bash benchmark_embed_and_retrieve.sh
+```
+
+```py
+Benchmark 1: embed-and-retrieve
+  Time (mean ± σ):     888.8 ms ±  29.6 ms    [User: 4508.7 ms, System: 253.6 ms]
+  Range (min … max):   854.5 ms … 946.9 ms    10 runs
+````
+
+### Larger embedding
+
+To embed all Python PEPs and retrieve a query, polars-fastembed takes about a minute
+
+- Run with `time just bench`
+
+```
+uv run --frozen benchmark
+Embedded 708 documents.
+Top 5 retrieval results:
+shape: (5, 4)
+┌─────┬────────────────────────┬─────────────────────────────────┬────────────┐
+│ pep ┆ text                   ┆ embedding                       ┆ similarity │
+│ --- ┆ ---                    ┆ ---                             ┆ ---        │
+│ i64 ┆ str                    ┆ array[f32, 384]                 ┆ f32        │
+╞═════╪════════════════════════╪═════════════════════════════════╪════════════╡
+│ 593 ┆ PEP: 593               ┆ [-0.058784, 0.016706, … 0.0438… ┆ 0.779388   │
+│     ┆ Title: Flexible funct… ┆                                 ┆            │
+│ 677 ┆ PEP: 677               ┆ [-0.07416, -0.004228, … 0.0494… ┆ 0.774187   │
+│     ┆ Title: Callable Type … ┆                                 ┆            │
+│ 589 ┆ PEP: 589               ┆ [-0.100245, 0.044359, … 0.0525… ┆ 0.772979   │
+│     ┆ Title: TypedDict: Typ… ┆                                 ┆            │
+│ 603 ┆ PEP: 603               ┆ [-0.121382, -0.024193, … -0.00… ┆ 0.767088   │
+│     ┆ Title: Adding a froze… ┆                                 ┆            │
+│ 646 ┆ PEP: 646               ┆ [-0.063982, -0.012509, … 0.032… ┆ 0.76216    │
+│     ┆ Title: Variadic Gener… ┆                                 ┆            │
+└─────┴────────────────────────┴─────────────────────────────────┴────────────┘
+
+real    0m55.144s
+user    17m47.700s
+sys     0m1.624s
 ```

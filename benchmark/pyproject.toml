@@ -6,6 +6,9 @@ build-backend = "uv_build"
 dev = [
   "pdbpp>=0.11.7"
 ]
+hf = [
+  "transformers>=4.57.3"
+]
 
 [project]
 name = "benchmark"
@@ -22,9 +25,10 @@ dependencies = [
 
 [project.scripts]
 benchmark = "benchmark:main"
+count-pep-tokens = "benchmark.tokens:count_pep_tokens"
 
 [tool.uv]
-default-groups = ["dev"]
+default-groups = ["dev", "hf"]
 
 [tool.uv.sources]
 polars-fastembed = {path = "../polars-fastembed", editable = true}

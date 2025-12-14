@@ -8,28 +8,15 @@ Benchmark Polars FastEmbed using a local PEP corpus.
 """
 
 import argparse
-from pathlib import Path
 
-import polars as pl
 from polars_fastembed import register_model
 
+from .dataset import load_peps
+from .schema import EMB_COL, TEXT_COL
+
 DEFAULT_MODEL_ID = "Xenova/all-MiniLM-L6-v2"
-PEP_DIR = Path(__file__).parents[2] / "benchmark_data" / "peps"
-LABEL_COL = "pep"
-TEXT_COL = "text"
-EMB_COL = "embedding"
 QUERY = "Typed dictionaries and mappings"
 TOP_K = 5
-
-
-def load_peps() -> list[dict[str, str]]:
-    """Load all PEP text files from the local directory."""
-    docs = []
-    for path in sorted(PEP_DIR.glob("pep-*.rst")):
-        text = path.read_text().strip()
-        if text:
-            docs.append({LABEL_COL: path.stem.split("-")[1], TEXT_COL: text})
-    return docs
 
 
 def main():
@@ -45,19 +32,18 @@ def main():
     model_id = args.model
     print(f"Using model: {model_id}")
 
-    docs = load_peps()
-    df = pl.DataFrame(docs).with_columns(pl.col(LABEL_COL).str.to_integer())
+    docs_df = load_peps()
 
     register_model(model_id, providers=["CPUExecutionProvider"])
 
-    df_emb = df.fastembed.embed(
+    emb_df = docs_df.fastembed.embed(
         columns=TEXT_COL,
         model_name=model_id,
         output_column=EMB_COL,
     )
-    print(f"Embedded {len(df_emb)} documents.")
+    print(f"Embedded {len(emb_df)} documents.")
 
-    results = df_emb.fastembed.retrieve(
+    results = emb_df.fastembed.retrieve(
         query=QUERY,
         model_name=model_id,
         embedding_column=EMB_COL,

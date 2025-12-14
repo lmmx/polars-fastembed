@@ -30,7 +30,7 @@ jobs:
         python-version: ${{ fromJson(inputs.python-versions) }}
     defaults:
       run:
-        working-directory: rewrite
+        working-directory: polars-fastembed
     steps:
       - uses: actions/checkout@v4
 
@@ -48,7 +48,7 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
         with:
-          workspaces: rewrite
+          workspaces: polars-fastembed
           key: ${{ inputs.os }}-${{ inputs.target }}-${{ matrix.python-version }}
 
       - name: Setup platform dependencies (Linux)

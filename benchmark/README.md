@@ -29,4 +29,4 @@ So embedding and retrieval of the MiniLM-L6-v2 on all PEPs
 
 - Total token count: 3,615,903 = 3.6M tokens in 30s = 8ms per 1k tokens
 
-  - Roughly 2x as fast as recently reported 14.7ms per 1k tokens [here](https://www.reddit.com/r/LocalLLaMA/comments/1nrgklt/opensource_embedding_models_which_one_to_use/)
+  - Roughly 2x as fast as recently reported 14.7ms per 1k tokens [here](https://www.reddit.com/r/LocalLLaMA/comments/1nrgklt/opensource_embedding_models_which_one_to_use/) or [here](https://supermemory.ai/blog/best-open-source-embedding-models-benchmarked-and-ranked/)

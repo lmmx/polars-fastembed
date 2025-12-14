@@ -39,8 +39,7 @@ def register_model(model_name: str, providers: list[str] | None = None) -> None:
 
     Note: providers is not implemented yet (CPU vs. GPU etc).
     """
-    # _register_model(model_name, providers)
-    _register_model(model_name)
+    _register_model(model_name, providers)
 
 
 def clear_registry() -> None:

@@ -738,8 +738,8 @@ dependencies = [
   "anyhow",
   "hf-hub",
   "image",
-  "ndarray 0.16.1",
-  "ort 2.0.0-rc.9",
+  "ndarray",
+  "ort",
   "rayon",
   "serde_json",
   "tokenizers"
@@ -1509,12 +1509,12 @@ dependencies = [
 
 [[package]]
 name = "libloading"
-version = "0.7.4"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67380fd3b2fbe7527a606e18729d21c6f3951633d0500574c4dc22d2d638b9f"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
 dependencies = [
   "cfg-if",
-  "winapi"
+  "windows-link"
 ]
 
 [[package]]
@@ -1719,19 +1719,6 @@ dependencies = [
   "security-framework",
   "security-framework-sys",
   "tempfile"
-]
-
-[[package]]
-name = "ndarray"
-version = "0.15.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adb12d4e967ec485a5f71c6311fe28158e9d6f4bc4a447b474184d0f91a8fa32"
-dependencies = [
-  "matrixmultiply",
-  "num-complex",
-  "num-integer",
-  "num-traits",
-  "rawpointer"
 ]
 
 [[package]]
@@ -1954,29 +1941,12 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "ort"
-version = "1.16.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "889dca4c98efa21b1ba54ddb2bde44fd4920d910f492b618351f839d8428d79d"
-dependencies = [
-  "flate2",
-  "lazy_static",
-  "libc",
-  "libloading",
-  "ndarray 0.15.6",
-  "tar",
-  "thiserror 1.0.69",
-  "tracing",
-  "vswhom",
-  "winapi"
-]
-
-[[package]]
-name = "ort"
 version = "2.0.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52afb44b6b0cffa9bf45e4d37e5a4935b0334a51570658e279e9e3e6cf324aa5"
 dependencies = [
-  "ndarray 0.16.1",
+  "libloading",
+  "ndarray",
   "ort-sys",
   "tracing"
 ]
@@ -2621,7 +2591,7 @@ dependencies = [
   "once_cell",
   "openssl",
   "openssl-probe",
-  "ort 1.16.3",
+  "ort",
   "polars",
   "polars-arrow",
   "pyo3",
@@ -3772,19 +3742,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "784e0ac535deb450455cbfa28a6f0df145ea1bb7ae51b821cf5e7927fdcfbdd0"
 dependencies = [
   "pin-project-lite",
-  "tracing-attributes",
   "tracing-core"
-]
-
-[[package]]
-name = "tracing-attributes"
-version = "0.1.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "395ae124c09f9e6918a2310af6038fba074bcf474ac352496d5910dd59a2226d"
-dependencies = [
-  "proc-macro2",
-  "quote",
-  "syn"
 ]
 
 [[package]]
@@ -3951,26 +3909,6 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
-
-[[package]]
-name = "vswhom"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be979b7f07507105799e854203b470ff7c78a1639e330a58f183b5fea574608b"
-dependencies = [
-  "libc",
-  "vswhom-sys"
-]
-
-[[package]]
-name = "vswhom-sys"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb067e4cbd1ff067d1df46c9194b5de0e98efd2810bbc95c5d5e5f25a3231150"
-dependencies = [
-  "cc",
-  "libc"
-]
 
 [[package]]
 name = "want"
@@ -4189,6 +4127,12 @@ dependencies = [
   "quote",
   "syn"
 ]
+
+[[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
 name = "windows-registry"

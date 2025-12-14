@@ -17,7 +17,7 @@ PEP_DIR = Path(__file__).parents[2] / "benchmark_data" / "peps"
 LABEL_COL = "pep"
 TEXT_COL = "text"
 EMB_COL = "embedding"
-QUERY = "Tell me about deep learning"
+QUERY = "Typed dictionaries and mappings"
 TOP_K = 5
 
 
@@ -32,7 +32,7 @@ def load_peps() -> list[dict[str, str]]:
 
 
 def main():
-    docs = load_peps()[:10]
+    docs = load_peps()
     df = pl.DataFrame(docs).with_columns(pl.col(LABEL_COL).str.to_integer())
 
     register_model(MODEL_ID, providers=["CPUExecutionProvider"])
@@ -51,6 +51,4 @@ def main():
         k=TOP_K,
     )
     print(f"Top {TOP_K} retrieval results:")
-    for i, row in enumerate(results.to_dicts(), 1):
-        snippet = row[TEXT_COL][:100].replace("\n", " ")
-        print(f"{i}. {snippet!r}")
+    print(results)

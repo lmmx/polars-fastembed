@@ -1,0 +1,114 @@
+PEP: 693
+Title: Python 3.12 Release Schedule
+Author: Thomas Wouters <thomas@python.org>
+Status: Active
+Type: Informational
+Topic: Release
+Created: 24-May-2022
+Python-Version: 3.12
+
+
+Abstract
+========
+
+This document describes the development and release schedule for
+Python 3.12.
+
+Release Manager and Crew
+========================
+
+- 3.12 Release Manager: Thomas Wouters
+- Windows installers: Steve Dower
+- Mac installers: Ned Deily
+- Documentation: Julien Palard
+
+Release Schedule
+================
+
+3.12.0 schedule
+---------------
+
+Note: the dates below use a 17-month development period that results
+in a 12-month release cadence between feature versions, as defined by
+:pep:`602`.
+
+.. release schedule: feature
+
+Actual:
+
+- 3.12 development begins: Sunday, 2022-05-08
+- 3.12.0 alpha 1: Monday, 2022-10-24
+- 3.12.0 alpha 2: Monday, 2022-11-14
+- 3.12.0 alpha 3: Tuesday, 2022-12-06
+- 3.12.0 alpha 4: Tuesday, 2023-01-10
+- 3.12.0 alpha 5: Tuesday, 2023-02-07
+- 3.12.0 alpha 6: Tuesday, 2023-03-07
+- 3.12.0 alpha 7: Tuesday, 2023-04-04
+- 3.12.0 beta 1: Monday, 2023-05-22
+  (No new features beyond this point.)
+- 3.12.0 beta 2: Tuesday, 2023-06-06
+- 3.12.0 beta 3: Monday, 2023-06-19
+- 3.12.0 beta 4: Tuesday, 2023-07-11
+- 3.12.0 candidate 1: Sunday, 2023-08-06
+- 3.12.0 candidate 2: Wednesday, 2023-09-06
+- 3.12.0 candidate 3: Tuesday, 2023-09-19
+- 3.12.0 final: Monday, 2023-10-02
+
+.. release schedule: ends
+
+Bugfix releases
+---------------
+
+.. release schedule: bugfix
+
+Actual:
+
+- 3.12.1: Thursday, 2023-12-07
+- 3.12.2: Tuesday, 2024-02-06
+- 3.12.3: Tuesday, 2024-04-09
+- 3.12.4: Thursday, 2024-06-06
+- 3.12.5: Tuesday, 2024-08-06
+- 3.12.6: Friday, 2024-09-06
+- 3.12.7: Tuesday, 2024-10-01
+- 3.12.8: Tuesday, 2024-12-03
+- 3.12.9: Tuesday, 2025-02-04
+- 3.12.10: Tuesday, 2025-04-08
+  (Final regular bugfix release with binary installers)
+
+.. release schedule: ends
+
+Source-only security fix releases
+---------------------------------
+
+Provided irregularly on an as-needed basis until October 2028.
+
+.. release schedule: security
+
+- 3.12.11: Tuesday, 2025-06-03
+- 3.12.12: Thursday, 2025-10-09
+
+.. release schedule: ends
+
+3.12 Lifespan
+-------------
+
+3.12 received bugfix updates approximately every 2 months for
+approximately 18 months.  Some time after the release of 3.13.0 final,
+the tenth and final 3.12 bugfix update was released.  After that,
+it is expected that security updates (source only) will be released
+until 5 years after the release of 3.12.0 final, so until approximately
+October 2028.
+
+
+Features for 3.12
+=================
+
+New features can be found in `What’s New In Python 3.12
+<https://docs.python.org/3.12/whatsnew/3.12.html>`__.
+
+
+Copyright
+=========
+
+This document is placed in the public domain or under the CC0-1.0-Universal
+license, whichever is more permissive.

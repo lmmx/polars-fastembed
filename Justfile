@@ -1,5 +1,6 @@
 import ".just/ci/architectures.just"
 import ".just/ci/versions.just"
+import ".just/bench.just"
 import ".just/commit.just"
 import ".just/ship.just"
 

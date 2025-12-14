@@ -1,5 +1,5 @@
 # Release a new version, pass --help for options to `uv version --bump`
-[working-directory: 'rewrite']
+[working-directory: 'polars-fastembed']
 release bump_level="patch":
     #!/usr/bin/env -S echo-comment --shell-flags="-e" --color bright-green
 

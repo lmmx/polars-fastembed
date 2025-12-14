@@ -53,7 +53,7 @@ def main():
     print(f"🤖 Using model: {MODEL_NAME}")
 
     # Create fixtures directory
-    fixtures_dir = Path("rewrite/tests/fixtures")
+    fixtures_dir = Path("polars-fastembed/tests/fixtures")
     fixtures_dir.mkdir(parents=True, exist_ok=True)
 
     print("📥 Loading FastEmbed model...")

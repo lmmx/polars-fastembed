@@ -30,7 +30,7 @@ uv pip install polars-fastembed[rtcompat]
 
 ## Demo
 
-See [demo.py](https://github.com/lmmx/polars-fastembed/tree/master/rewrite/demo.py)
+See [demo.py](https://github.com/lmmx/polars-fastembed/tree/master/polars-fastembed/demo.py)
 
 ```py
 import polars as pl

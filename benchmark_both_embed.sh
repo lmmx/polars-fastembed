@@ -1,6 +1,6 @@
 hyperfine \
   './original/.venv/bin/python original/embed_demo.py' \
-  './rewrite/.venv/bin/python rewrite/embed_demo.py' \
+  './polars-fastembed/.venv/bin/python polars-fastembed/embed_demo.py' \
   -n python-plugin \
-  -n rust-rewrite \
+  -n rust-polars-fastembed \
   --warmup 10

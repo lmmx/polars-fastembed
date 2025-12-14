@@ -1,4 +1,4 @@
-[working-directory: 'rewrite']
+[working-directory: 'polars-fastembed']
 _min_version:
     #!/usr/bin/env -S bash -euo pipefail
     uvx --from=toml-cli toml get --toml-path=pyproject.toml project.requires-python | sed 's/>=//;s/"//g'

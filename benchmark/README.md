@@ -24,3 +24,10 @@ The fastest is `Xenova/all-MiniLM-L6-v2`, so this is the default.
 | Alibaba-NLP/gte-large-en-v1.5                | 17.79        |
 | mixedbread-ai/mxbai-embed-large-v1           | 43.78        |
 | nomic-ai/nomic-embed-text-v1.5               | 55.29        |
+
+So embedding and retrieval of the MiniLM-L6-v2 on all PEPs
+
+- Token estimate: 13,275,106/4 = 3,318,776.5 = 3.3M tokens per second,
+  or 9.1ms / 1k tokens
+  - Matches ballpark figure of 14.7ms per 1k tokens [here](https://www.reddit.com/r/LocalLLaMA/comments/1nrgklt/opensource_embedding_models_which_one_to_use/)
+    (though that was probably just embedding, retrieval time is negligible)

@@ -12,14 +12,28 @@ This repository contains the Rust implementation of **polars-fastembed**, a Pola
 
 ### Embed
 
+`hyperfine` timings from running the `embed_demo.py` script with `--warmup 10`
+
 ```bash
-  Time (mean ± σ):     540.4 ms ±   2.8 ms    [User: 1738.9 ms, System: 155.0 ms]
-  Range (min … max):   535.5 ms … 545.3 ms    10 runs
-````
+bash benchmark_embed.sh
+```
+
+```py
+Benchmark 1: embed
+  Time (mean ± σ):     591.9 ms ±  15.5 ms    [User: 1779.2 ms, System: 171.1 ms]
+  Range (min … max):   573.2 ms … 615.1 ms    10 runs
+```
 
 ### Embed + Retrieve
 
+`hyperfine` timings from running the `demo.py` script with `--warmup 10`
+
 ```bash
-  Time (mean ± σ):     845.7 ms ±  17.2 ms    [User: 4446.5 ms, System: 238.7 ms]
-  Range (min … max):   817.0 ms … 865.8 ms    10 runs
+bash benchmark_embed_and_retrieve.sh
 ```
+
+```py
+Benchmark 1: embed-and-retrieve
+  Time (mean ± σ):     888.8 ms ±  29.6 ms    [User: 4508.7 ms, System: 253.6 ms]
+  Range (min … max):   854.5 ms … 946.9 ms    10 runs
+````

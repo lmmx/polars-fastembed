@@ -14,10 +14,20 @@ from polars.plugins import register_plugin_function
 # Set ORT_DYLIB_PATH before importing the Rust extension
 _libs_dir = Path(__file__).parent / "libs"
 _ort_lib = _libs_dir / "libonnxruntime.so"
-if _ort_lib.exists() and "ORT_DYLIB_PATH" not in os.environ:
-    os.environ["ORT_DYLIB_PATH"] = str(_ort_lib)
 
-print(os.environ.get("ORT_DYLIB_PATH"))
+if _ort_lib.exists():
+    if "ORT_DYLIB_PATH" not in os.environ:
+        os.environ["ORT_DYLIB_PATH"] = str(_ort_lib)
+
+    # LD_LIBRARY_PATH for CUDA provider discovery
+    existing = os.environ.get("LD_LIBRARY_PATH", "")
+    os.environ["LD_LIBRARY_PATH"] = (
+        f"{_libs_dir}:{existing}" if existing else str(_libs_dir)
+    )
+
+    print(os.environ.get("ORT_DYLIB_PATH"))
+else:
+    raise ValueError("No ORT lib exists")
 
 # Now safe to import Rust module
 

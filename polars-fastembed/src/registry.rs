@@ -13,10 +13,22 @@ use crate::model_suggestions::from_model_code;
 
 #[cfg(feature = "ort-dynamic")]
 fn default_providers() -> Vec<ExecutionProviderDispatch> {
-    eprintln!("Setting up providers: CUDA, CPU fallback");
+    let cuda = CUDAExecutionProvider::default();
+    eprintln!("CUDA is_available: {:?}", cuda.is_available());
+
+    match ort::session::Session::builder() {
+        Ok(mut builder) => {
+            match cuda.register(&mut builder) {
+                Ok(_) => eprintln!("CUDA provider registered successfully"),
+                Err(e) => eprintln!("CUDA provider registration FAILED: {:?}", e),
+            }
+        }
+        Err(e) => eprintln!("Session builder failed: {:?}", e),
+    }
+
     vec![
-        CUDAExecutionProvider::default().into(),
-        // CPUExecutionProvider::default().into(),
+        cuda.into(),
+        CPUExecutionProvider::default().into(),
     ]
 }
 
@@ -118,9 +130,10 @@ pub fn register_model(
         init = init.with_execution_providers(providers);
     }
 
-    // Actually load the model
     let embedder = TextEmbedding::try_new(init)
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to load model '{model_name}': {e}")))?;
+    .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to load model '{model_name}': {e}")))?;
+
+    eprintln!("Model '{}' loaded successfully", model_name);
 
     map.insert(model_name, Arc::new(Mutex::new(embedder)));
     Ok(())

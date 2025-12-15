@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Mutex};
 
 #[cfg(feature = "ort-dynamic")]
 use ort::execution_providers::{ExecutionProviderDispatch, CPUExecutionProvider, CUDAExecutionProvider};
@@ -27,19 +27,19 @@ fn default_providers() -> Vec<fastembed::ExecutionProviderDispatch> {
 }
 
 /// Global registry of loaded models (model_name -> loaded `TextEmbedding`).
-static MODEL_REGISTRY: Lazy<RwLock<HashMap<String, Arc<TextEmbedding>>>> =
+static MODEL_REGISTRY: Lazy<RwLock<HashMap<String, Arc<Mutex<TextEmbedding>>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// Lazily-initialized default model for when no model_id is specified.
 /// This avoids repeated model loads when calling embed_text without an explicit model.
-static DEFAULT_MODEL: Lazy<Arc<TextEmbedding>> = Lazy::new(|| {
+static DEFAULT_MODEL: Lazy<Arc<Mutex<TextEmbedding>>> = Lazy::new(|| {
     let init = InitOptions::default()
         .with_show_download_progress(false)
         .with_execution_providers(default_providers());
-    Arc::new(
+    Arc::new(Mutex::new(
         TextEmbedding::try_new(init)
             .expect("Failed to load default embedding model"),
-    )
+    ))
 });
 
 /// Extension trait to add dimension-related methods to TextEmbedding.
@@ -47,11 +47,11 @@ pub trait TextEmbeddingExt {
     fn get_dimension(&self) -> usize;
 }
 
-impl TextEmbeddingExt for TextEmbedding {
+impl TextEmbeddingExt for Mutex<TextEmbedding> {
     fn get_dimension(&self) -> usize {
-        // Run a test embedding to determine the dimension
+        let mut embedder = self.lock().unwrap();
         let test_text = "dimension_test";
-        match self.embed(vec![test_text], None) {
+        match embedder.embed(vec![test_text], None) {
             Ok(embeddings) if !embeddings.is_empty() => embeddings[0].len(),
             _ => panic!("Failed to determine embedding dimension"),
         }
@@ -122,7 +122,7 @@ pub fn register_model(
     let embedder = TextEmbedding::try_new(init)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to load model '{model_name}': {e}")))?;
 
-    map.insert(model_name, Arc::new(embedder));
+    map.insert(model_name, Arc::new(Mutex::new(embedder)));
     Ok(())
 }
 
@@ -148,7 +148,7 @@ pub fn list_models() -> PyResult<Vec<String>> {
 /// Return an Arc<TextEmbedding> from the registry.
 /// - If `model_name` is None, returns the cached default model.
 /// - If `model_name` is Some but not in the registry, loads and caches it.
-pub fn get_or_load_model(model_name: &Option<String>) -> PolarsResult<Arc<TextEmbedding>> {
+pub fn get_or_load_model(model_name: &Option<String>) -> PolarsResult<Arc<Mutex<TextEmbedding>>> {
     // If no model name is provided, return the cached default
     if model_name.is_none() {
         return Ok(DEFAULT_MODEL.clone());
@@ -173,7 +173,7 @@ pub fn get_or_load_model(model_name: &Option<String>) -> PolarsResult<Arc<TextEm
     let init = InitOptions::new(embedding_model).with_show_download_progress(false);
     let embedder = TextEmbedding::try_new(init)
         .map_err(|e| PolarsError::ComputeError(format!("Failed to load {name}: {e}").into()))?;
-    let arc_embedder = Arc::new(embedder);
+    let arc_embedder = Arc::new(Mutex::new(embedder));
     map.insert(name.clone(), arc_embedder.clone());
     Ok(arc_embedder)
 }

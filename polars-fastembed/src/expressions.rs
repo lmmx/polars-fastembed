@@ -42,6 +42,8 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
 
     // Look up or load the requested model (or the "default" if None)
     let embedder = get_or_load_model(&kwargs.model_id)?;
+    let mut embedder_guard = embedder.lock()
+        .map_err(|_| PolarsError::ComputeError("Lock poison".into()))?;
 
     // Use the extension trait to get the embedding dimension
     use crate::registry::TextEmbeddingExt;
@@ -53,7 +55,7 @@ pub fn embed_text(inputs: &[Series], kwargs: EmbedTextKwargs) -> PolarsResult<Se
     let mut row_embeddings = Vec::with_capacity(ca.len());
     for opt_str in ca.into_iter() {
         if let Some(text) = opt_str {
-            match embedder.embed([text].to_vec(), None) {
+            match embedder_guard.embed(vec![text], None) {
                 Ok(mut results) => {
                     if let Some(embedding) = results.pop() {
                         // Verify the dimension matches what we expect

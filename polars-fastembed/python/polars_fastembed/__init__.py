@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import inspect
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -11,31 +10,21 @@ import polars_distance as pld
 from polars.api import register_dataframe_namespace
 from polars.plugins import register_plugin_function
 
+from polars_fastembed._ort_loader import configure_ort
+
 # Set ORT_DYLIB_PATH before importing the Rust extension
-_libs_dir = Path(__file__).parent / "libs"
-_ort_lib = _libs_dir / "libonnxruntime.so"
-
-if _ort_lib.exists():
-    if "ORT_DYLIB_PATH" not in os.environ:
-        os.environ["ORT_DYLIB_PATH"] = str(_ort_lib)
-
-    # LD_LIBRARY_PATH for CUDA provider discovery
-    existing = os.environ.get("LD_LIBRARY_PATH", "")
-    os.environ["LD_LIBRARY_PATH"] = (
-        f"{_libs_dir}:{existing}" if existing else str(_libs_dir)
-    )
-
-    print(os.environ.get("ORT_DYLIB_PATH"))
-else:
-    raise ValueError("No ORT lib exists")
+configure_ort()
 
 # Now safe to import Rust module
-
 from polars_fastembed._polars_fastembed import (
     clear_registry as _clear_registry,
 )
-from polars_fastembed._polars_fastembed import list_models as _list_models
-from polars_fastembed._polars_fastembed import register_model as _register_model
+from polars_fastembed._polars_fastembed import (
+    list_models as _list_models,
+)
+from polars_fastembed._polars_fastembed import (
+    register_model as _register_model,
+)
 
 from .utils import parse_into_expr, parse_version
 
@@ -50,10 +39,7 @@ if parse_version(pl.__version__) < parse_version("0.20.16"):
 else:
     lib = Path(__file__).parent
 
-__all__ = ["embed_text"]
-
-
-# --- Re-exported Rust functions so users can import from polars_fastembed directly ---
+__all__ = ["embed_text", "register_model", "clear_registry", "list_models"]
 
 
 def register_model(model_name: str, providers: list[str] | None = None) -> None:

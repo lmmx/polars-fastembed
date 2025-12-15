@@ -61,41 +61,15 @@ fn parse_providers(provider_names: &[String]) -> Result<Vec<ExecutionProviderDis
 }
 
 /// Register a model (by huggingface ID or local path). If it's already loaded, does nothing.
-#[cfg(not(feature = "ort-dynamic"))]
-#[pyfunction]
-pub fn register_model(model_name: String) -> PyResult<()> {
-    let mut map = MODEL_REGISTRY
-        .write()
-        .map_err(|_| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Lock poison"))?;
-
-    // Already loaded?
-    if map.contains_key(&model_name) {
-        return Ok(());
-    }
-
-    // from_model_code either returns a known EmbeddingModel or error with suggestions
-    let embedding_model = from_model_code(&model_name).map_err(|polars_err| {
-        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(polars_err.to_string())
-    })?;
-
-    // Build the init options
-    let init = InitOptions::new(embedding_model);
-
-    // Actually load the model
-    let embedder = TextEmbedding::try_new(init)
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to load model '{model_name}': {e}")))?;
-
-    map.insert(model_name, Arc::new(embedder));
-    Ok(())
-}
-
-/// Register a model (by huggingface ID or local path) with optional providers.
-/// If it's already loaded, does nothing.
 ///
 /// Example providers: ["CPUExecutionProvider"], ["CUDAExecutionProvider"], etc.
-#[cfg(feature = "ort-dynamic")]
-#[pyfunction(signature = (model_name, providers=None))]
-pub fn register_model(model_name: String, providers: Option<Vec<String>>) -> PyResult<()> {
+#[pyfunction]
+#[pyo3(signature = (model_name, providers=None))]
+pub fn register_model(
+    model_name: String,
+    #[cfg_attr(not(feature = "ort-dynamic"), allow(unused_variables))]
+    providers: Option<Vec<String>>,
+) -> PyResult<()> {
     let mut map = MODEL_REGISTRY
         .write()
         .map_err(|_| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Lock poison"))?;
@@ -110,14 +84,13 @@ pub fn register_model(model_name: String, providers: Option<Vec<String>>) -> PyR
         PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(polars_err.to_string())
     })?;
 
-    // Build the init options
-    let mut init = InitOptions::new(embedding_model); // only needs mut if changing providers
+    #[cfg_attr(not(feature = "ort-dynamic"), warn(unused_mut))]
+    let mut init = InitOptions::new(embedding_model);
 
+    #[cfg(feature = "ort-dynamic")]
     if let Some(provider_list) = providers {
-        // parse the strings -> Vec<ExecutionProvider>
         let dispatches = parse_providers(&provider_list)
             .map_err(|err| PyErr::new::<pyo3::exceptions::PyValueError, _>(err))?;
-        // pass to fastembed
         init = init.with_execution_providers(dispatches);
     }
 

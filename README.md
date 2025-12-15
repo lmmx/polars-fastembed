@@ -8,7 +8,7 @@ This repository contains the Rust implementation of **polars-fastembed**, a Pola
 
 ## Performance Notes
 
-- Benchmarking shows `Xenova/all-MiniLM-L6-v2` is the fastest, ~8ms per 1k tokens
+- Benchmarking shows `Xenova/all-MiniLM-L6-v2` is the fastest, ~8ms per 1k tokens, or ~5ms/1k tok with GPU
 - No batching or explicit parallelism is used in the Rust embedding code
 
 ### Embed

@@ -12,9 +12,9 @@ openssl-probe = {version = "0.1", optional = true}
 ort = {version = "2.0.0-rc.5", default-features = false, optional = true}
 
 [features]
+default = ["ort-dynamic"]
 openssl-vendored = ["dep:openssl", "dep:openssl-probe"]
 ort-dynamic = ["dep:ort", "ort/load-dynamic"]
-ort-cuda = ["ort-dynamic", "ort/cuda"]
 
 [lib]
 name = "_polars_fastembed"

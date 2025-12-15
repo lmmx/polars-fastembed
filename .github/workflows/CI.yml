@@ -348,7 +348,7 @@ jobs:
             ${{ matrix.platform.before }}
           docker-options: ${{ matrix.platform.dockeropts }}
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: matrix.platform.skip != true
         with:
           name: wheels-linux-${{ matrix.platform.target }}
@@ -388,7 +388,7 @@ jobs:
           args: --release --out dist --find-interpreter --manifest-path polars-fastembed/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: matrix.platform.skip != true
         with:
           name: wheels-windows-${{ matrix.platform.target }}
@@ -422,7 +422,7 @@ jobs:
           args: --release --out dist --find-interpreter --manifest-path polars-fastembed/Cargo.toml ${{ matrix.platform.features }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Upload wheels
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: matrix.platform.skip != true
         with:
           name: wheels-macos-${{ matrix.platform.target }}
@@ -439,7 +439,7 @@ jobs:
           command: sdist
           args: --out dist --manifest-path polars-fastembed/Cargo.toml
       - name: Upload sdist
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-sdist
           path: dist

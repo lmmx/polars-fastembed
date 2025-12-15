@@ -17,6 +17,8 @@ _ort_lib = _libs_dir / "libonnxruntime.so"
 if _ort_lib.exists() and "ORT_DYLIB_PATH" not in os.environ:
     os.environ["ORT_DYLIB_PATH"] = str(_ort_lib)
 
+print(os.environ.get("ORT_DYLIB_PATH"))
+
 # Now safe to import Rust module
 
 from polars_fastembed._polars_fastembed import (

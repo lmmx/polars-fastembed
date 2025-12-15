@@ -34,7 +34,7 @@ def main():
 
     docs_df = load_peps()
 
-    register_model(model_id, providers=["CPUExecutionProvider"])
+    register_model(model_id, providers=["CUDAExecutionProvider"])
 
     emb_df = docs_df.fastembed.embed(
         columns=TEXT_COL,

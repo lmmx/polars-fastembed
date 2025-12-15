@@ -3,12 +3,28 @@ use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "ort-dynamic")]
 use ort::execution_providers::{ExecutionProviderDispatch, CPUExecutionProvider, CUDAExecutionProvider};
+use ort::execution_providers::ExecutionProvider;
 use fastembed::{InitOptions, TextEmbedding};
 use once_cell::sync::Lazy;
 use pyo3::prelude::*;
 use polars::prelude::{PolarsError, PolarsResult};
 
 use crate::model_suggestions::from_model_code;
+
+#[cfg(feature = "ort-dynamic")]
+fn default_providers() -> Vec<ExecutionProviderDispatch> {
+    eprintln!("Setting up providers: CUDA, CPU fallback");
+    vec![
+        CUDAExecutionProvider::default().into(),
+        // CPUExecutionProvider::default().into(),
+    ]
+}
+
+#[cfg(not(feature = "ort-dynamic"))]
+fn default_providers() -> Vec<fastembed::ExecutionProviderDispatch> {
+    // fastembed has its own type for this
+    vec![]
+}
 
 /// Global registry of loaded models (model_name -> loaded `TextEmbedding`).
 static MODEL_REGISTRY: Lazy<RwLock<HashMap<String, Arc<TextEmbedding>>>> =
@@ -17,8 +33,11 @@ static MODEL_REGISTRY: Lazy<RwLock<HashMap<String, Arc<TextEmbedding>>>> =
 /// Lazily-initialized default model for when no model_id is specified.
 /// This avoids repeated model loads when calling embed_text without an explicit model.
 static DEFAULT_MODEL: Lazy<Arc<TextEmbedding>> = Lazy::new(|| {
+    let init = InitOptions::default()
+        .with_show_download_progress(false)
+        .with_execution_providers(default_providers());
     Arc::new(
-        TextEmbedding::try_new(InitOptions::default().with_show_download_progress(false))
+        TextEmbedding::try_new(init)
             .expect("Failed to load default embedding model"),
     )
 });
@@ -42,6 +61,7 @@ impl TextEmbeddingExt for TextEmbedding {
 /// Parse e.g. ["CPUExecutionProvider"] => vec![ExecutionProviderDispatch]
 #[cfg(feature = "ort-dynamic")]
 fn parse_providers(provider_names: &[String]) -> Result<Vec<ExecutionProviderDispatch>, String> {
+    eprintln!("CUDA available: {:?}", CUDAExecutionProvider::default().is_available());
     let mut parsed = Vec::with_capacity(provider_names.len());
     for provider_str in provider_names {
         let dispatch: ExecutionProviderDispatch = match provider_str.as_str() {
@@ -88,10 +108,14 @@ pub fn register_model(
     let mut init = InitOptions::new(embedding_model);
 
     #[cfg(feature = "ort-dynamic")]
-    if let Some(provider_list) = providers {
-        let dispatches = parse_providers(&provider_list)
-            .map_err(|err| PyErr::new::<pyo3::exceptions::PyValueError, _>(err))?;
-        init = init.with_execution_providers(dispatches);
+    {
+        let providers = match providers {
+            Some(list) => {
+                parse_providers(&list).map_err(|err| PyErr::new::<pyo3::exceptions::PyValueError, _>(err))?
+            },
+            None => default_providers(),
+        };
+        init = init.with_execution_providers(providers);
     }
 
     // Actually load the model

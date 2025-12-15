@@ -1,6 +1,8 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import inspect
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -9,7 +11,17 @@ import polars_distance as pld
 from polars.api import register_dataframe_namespace
 from polars.plugins import register_plugin_function
 
-from polars_fastembed._polars_fastembed import clear_registry as _clear_registry
+# Set ORT_DYLIB_PATH before importing the Rust extension
+_libs_dir = Path(__file__).parent / "libs"
+_ort_lib = _libs_dir / "libonnxruntime.so"
+if _ort_lib.exists() and "ORT_DYLIB_PATH" not in os.environ:
+    os.environ["ORT_DYLIB_PATH"] = str(_ort_lib)
+
+# Now safe to import Rust module
+
+from polars_fastembed._polars_fastembed import (
+    clear_registry as _clear_registry,
+)
 from polars_fastembed._polars_fastembed import list_models as _list_models
 from polars_fastembed._polars_fastembed import register_model as _register_model
 

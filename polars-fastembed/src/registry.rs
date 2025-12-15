@@ -73,7 +73,6 @@ impl TextEmbeddingExt for Mutex<TextEmbedding> {
 /// Parse e.g. ["CPUExecutionProvider"] => vec![ExecutionProviderDispatch]
 #[cfg(feature = "ort-dynamic")]
 fn parse_providers(provider_names: &[String]) -> Result<Vec<ExecutionProviderDispatch>, String> {
-    eprintln!("CUDA available: {:?}", CUDAExecutionProvider::default().is_available());
     let mut parsed = Vec::with_capacity(provider_names.len());
     for provider_str in provider_names {
         let dispatch: ExecutionProviderDispatch = match provider_str.as_str() {

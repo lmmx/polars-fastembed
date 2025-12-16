@@ -13,22 +13,22 @@ use crate::model_suggestions::from_model_code;
 
 #[cfg(feature = "ort-dynamic")]
 fn default_providers() -> Vec<ExecutionProviderDispatch> {
+    let trt = TensorRTExecutionProvider::default()
+        .with_engine_cache(true)
+        .with_engine_cache_path("/home/louis/.cache/tensorrt_engines")
+        .with_fp16(true)
+        .with_timing_cache(true)
+        .with_timing_cache_path("/home/louis/.cache/tensorrt_engines");
+
     let cuda = CUDAExecutionProvider::default();
+
+    eprintln!("TensorRT is_available: {:?}", trt.is_available());
     eprintln!("CUDA is_available: {:?}", cuda.is_available());
 
-    match ort::session::Session::builder() {
-        Ok(mut builder) => {
-            match cuda.register(&mut builder) {
-                Ok(_) => eprintln!("CUDA provider registered successfully"),
-                Err(e) => eprintln!("CUDA provider registration FAILED: {:?}", e),
-            }
-        }
-        Err(e) => eprintln!("Session builder failed: {:?}", e),
-    }
-
     vec![
-        cuda.into(),
-        CPUExecutionProvider::default().into(),
+        trt.build(),
+        cuda.build(),
+        CPUExecutionProvider::default().build(),
     ]
 }
 

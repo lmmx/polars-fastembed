@@ -14,7 +14,8 @@ from polars_fastembed import register_model
 from .dataset import load_peps
 from .schema import EMB_COL, TEXT_COL
 
-DEFAULT_MODEL_ID = "Xenova/all-MiniLM-L6-v2"
+# DEFAULT_MODEL_ID = "Xenova/all-MiniLM-L6-v2"
+DEFAULT_MODEL_ID = "Qdrant/all-MiniLM-L6-v2-onnx"
 QUERY = "Typed dictionaries and mappings"
 TOP_K = 5
 

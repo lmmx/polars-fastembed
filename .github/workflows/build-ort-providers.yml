@@ -34,19 +34,19 @@ jobs:
             ort_archive: onnxruntime-osx-arm64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.dylib"
             wheel_plat: macosx_14_0_arm64
-            can_upx: true # false
+            can_upx: true
           - os: macos-14
             platform: osx-x86_64
             ort_archive: onnxruntime-osx-x86_64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.dylib"
             wheel_plat: macosx_14_0_x86_64
-            can_upx: true # false
+            can_upx: true
           - os: windows-latest
             platform: win-x64
             ort_archive: onnxruntime-win-x64-1.23.0.zip
             lib_pattern: "*onnx*.dll"
             wheel_plat: win_amd64
-            can_upx: true
+            can_upx: false # Gives CantPackException: GUARD_CF enabled PE files are not supported
 
     runs-on: ${{ matrix.os }}
     steps:

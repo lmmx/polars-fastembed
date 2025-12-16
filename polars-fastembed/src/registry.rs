@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Mutex};
 
 #[cfg(feature = "ort-dynamic")]
-use ort::execution_providers::{ExecutionProviderDispatch, CPUExecutionProvider, CUDAExecutionProvider};
+use ort::execution_providers::{ExecutionProviderDispatch, CPUExecutionProvider, CUDAExecutionProvider, TensorRTExecutionProvider};
 use ort::execution_providers::ExecutionProvider;
 use fastembed::{InitOptions, TextEmbedding};
 use once_cell::sync::Lazy;
@@ -78,11 +78,12 @@ fn parse_providers(provider_names: &[String]) -> Result<Vec<ExecutionProviderDis
         let dispatch: ExecutionProviderDispatch = match provider_str.as_str() {
             "CPUExecutionProvider" => CPUExecutionProvider::default().into(),
             "CUDAExecutionProvider" => CUDAExecutionProvider::default().into(),
+            "TensorRTExecutionProvider" => TensorRTExecutionProvider::default().into(),
             // Add more as needed...
             other => {
                 return Err(format!(
                     "Unrecognized execution provider '{other}'. \
-                     Must be one of: CPUExecutionProvider, CUDAExecutionProvider, ..."
+                     Must be one of: CPUExecutionProvider, CUDAExecutionProvider, TensorRTExecutionProvider, ..."
                 ));
             }
         };

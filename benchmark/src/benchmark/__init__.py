@@ -32,11 +32,15 @@ def main():
     model_id = args.model
     print(f"Using model: {model_id}")
 
-    docs_df = load_peps()
+    docs_df = load_peps().head(2)
 
     register_model(
         model_id,
-        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        providers=[
+            "TensorRTExecutionProvider",
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider",
+        ],
     )
 
     emb_df = docs_df.fastembed.embed(

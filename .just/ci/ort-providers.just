@@ -44,14 +44,20 @@ rename-wheel dir plat:
 
 # Test CPU provider wheel
 test-ort-cpu wheel_dir:
-    uv venv test-env
+    #!/usr/bin/env bash
+    set -euo pipefail
+    min_py=$(just _min_version)
+    uv venv test-env --python "$min_py"
     uv pip install --python test-env pytest
     uv pip install --python test-env {{wheel_dir}}/*.whl
     uv run --python test-env pytest polars-fastembed-cpu/tests -v
 
 # Test CUDA provider wheel
 test-ort-cuda wheel_dir:
-    uv venv test-env
+    #!/usr/bin/env bash
+    set -euo pipefail
+    min_py=$(just _min_version)
+    uv venv test-env --python "$min_py"
     uv pip install --python test-env pytest
     uv pip install --python test-env {{wheel_dir}}/*.whl
     uv run --python test-env pytest polars-fastembed-cuda/tests -v

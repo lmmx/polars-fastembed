@@ -105,13 +105,13 @@ jobs:
             wheel_plat: manylinux_2_17_x86_64
             download_ort: false  # Use committed libs
             can_upx: false       # Already compressed
-          - os: windows-latest
-            platform: win-x64-gpu
-            ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
-            lib_pattern: "*onnx*.dll"
-            wheel_plat: win_amd64
-            download_ort: true
-            can_upx: true
+          # - os: windows-latest
+          #   platform: win-x64-gpu
+          #   ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
+          #   lib_pattern: "*onnx*.dll"
+          #   wheel_plat: win_amd64
+          #   download_ort: true
+          #   can_upx: false # Gives CantPackException: GUARD_CF enabled PE files are not supported
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -196,8 +196,8 @@ jobs:
         include:
           - os: ubuntu-22.04
             platform: linux-x64-gpu
-          - os: windows-latest
-            platform: win-x64-gpu
+          # - os: windows-latest
+          #   platform: win-x64-gpu
 
     runs-on: ${{ matrix.os }}
     steps:

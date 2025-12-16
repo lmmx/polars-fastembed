@@ -22,26 +22,31 @@ jobs:
             ort_archive: onnxruntime-linux-x64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
+            can_upx: true
           - os: ubuntu-22.04
             platform: linux-aarch64
             ort_archive: onnxruntime-linux-aarch64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_aarch64
+            can_upx: true
           - os: macos-14
             platform: osx-arm64
             ort_archive: onnxruntime-osx-arm64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.dylib"
             wheel_plat: macosx_14_0_arm64
+            can_upx: true # false
           - os: macos-14
             platform: osx-x86_64
             ort_archive: onnxruntime-osx-x86_64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.dylib"
             wheel_plat: macosx_14_0_x86_64
+            can_upx: true # false
           - os: windows-latest
             platform: win-x64
             ort_archive: onnxruntime-win-x64-1.23.0.zip
             lib_pattern: "*onnx*.dll"
             wheel_plat: win_amd64
+            can_upx: true
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -50,10 +55,26 @@ jobs:
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
 
+      - name: Install mise
+        uses: taiki-e/install-action@a35b65432737a0a6ffe8864f12763fb6c19e4f7a # tag=mise
+
+      - name: Install upx via mise
+        if: matrix.can_upx && runner.os != 'macOS'
+        run: mise use upx
+
+      - name: Install upx via Homebrew (macOS only)
+        if: matrix.can_upx && runner.os == 'macOS'
+        run: brew install upx
+
       - uses: astral-sh/setup-uv@v5
 
       - name: Download ORT
         run: just _download-ort-cpu ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
+
+      - name: Compress libs with UPX
+        if: matrix.can_upx
+        shell: bash
+        run: just compress-libs-upx polars-fastembed-cpu/python/polars_fastembed_cpu/libs
 
       - name: Build wheel
         run: just build-ort-cpu
@@ -62,14 +83,16 @@ jobs:
         shell: bash
         run: just rename-wheel polars-fastembed-cpu ${{ matrix.wheel_plat }}
 
+      - name: Check wheel size under 100MB
+        shell: bash
+        run: just check-wheel-size polars-fastembed-cpu/dist
+
       - name: Upload wheel
         uses: actions/upload-artifact@v5
         with:
           name: wheels-cpu-${{ matrix.platform }}
           path: polars-fastembed-cpu/dist/*.whl
 
-  # CUDA: build from committed libs (Linux x64 sm_86 only)
-  # CUDA: build from committed libs (Linux x64 sm_86 only for now)
   # CUDA: build from committed libs (Linux x64 sm_86 only for now)
   build-cuda:
     strategy:
@@ -77,8 +100,17 @@ jobs:
       matrix:
         include:
           - os: ubuntu-22.04
-            platform: linux-x64
+            platform: linux-x64-gpu
+            ort_archive: onnxruntime-linux-x64-gpu-1.23.0.tgz
+            lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
+            can_upx: true
+          - os: windows-latest
+            platform: win-x64-gpu
+            ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
+            lib_pattern: "*onnx*.dll"
+            wheel_plat: win_amd64
+            can_upx: true
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -87,14 +119,35 @@ jobs:
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
 
+      - name: Install mise
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+        with:
+          tool: mise
+
+      - name: Install upx via mise
+        if: matrix.can_upx
+        run: mise use upx
+
       - uses: astral-sh/setup-uv@v5
 
+      - name: Download ORT
+        run: just _download-ort-cuda ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
+
+      - name: Compress libs with UPX
+        if: matrix.can_upx
+        shell: bash
+        run: just compress-libs-upx polars-fastembed-cuda/python/polars_fastembed_cuda/libs
+
       - name: Build wheel
-        run: uv build --wheel polars-fastembed-cuda
+        run: just build-ort-cuda
 
       - name: Rename wheel with platform tag
         shell: bash
         run: just rename-wheel polars-fastembed-cuda ${{ matrix.wheel_plat }}
+
+      - name: Check wheel size under 100MB
+        shell: bash
+        run: just check-wheel-size polars-fastembed-cuda/dist
 
       - name: Upload wheel
         uses: actions/upload-artifact@v5
@@ -141,7 +194,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-22.04
-            platform: linux-x64
+            platform: linux-x64-gpu
+          - os: windows-latest
+            platform: win-x64-gpu
 
     runs-on: ${{ matrix.os }}
     steps:

@@ -94,6 +94,7 @@ jobs:
           path: polars-fastembed-cpu/dist/*.whl
 
   # CUDA: build from committed libs (Linux x64 sm_86 only for now)
+  # CUDA: Linux uses committed libs, Windows downloads from Microsoft
   build-cuda:
     strategy:
       fail-fast: false
@@ -101,15 +102,15 @@ jobs:
         include:
           - os: ubuntu-22.04
             platform: linux-x64-gpu
-            ort_archive: onnxruntime-linux-x64-gpu-1.23.0.tgz
-            lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
-            can_upx: true
+            download_ort: false  # Use committed libs
+            can_upx: false       # Already compressed
           - os: windows-latest
             platform: win-x64-gpu
             ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
             lib_pattern: "*onnx*.dll"
             wheel_plat: win_amd64
+            download_ort: true
             can_upx: true
 
     runs-on: ${{ matrix.os }}
@@ -120,9 +121,8 @@ jobs:
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
 
       - name: Install mise
-        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
-        with:
-          tool: mise
+        uses: taiki-e/install-action@a35b65432737a0a6ffe8864f12763fb6c19e4f7a # tag=mise
+        if: matrix.can_upx
 
       - name: Install upx via mise
         if: matrix.can_upx
@@ -131,6 +131,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
 
       - name: Download ORT
+        if: matrix.download_ort
         run: just _download-ort-cuda ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
 
       - name: Compress libs with UPX

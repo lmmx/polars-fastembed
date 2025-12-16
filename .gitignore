@@ -16,3 +16,5 @@ target
 .fastembed_cache
 *.so
 *.so.*
+!**/libs/*.so
+!**/libs/*.so.*

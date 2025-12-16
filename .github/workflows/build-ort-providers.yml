@@ -68,21 +68,17 @@ jobs:
           name: wheels-cpu-${{ matrix.platform }}
           path: polars-fastembed-cpu/dist/*.whl
 
+  # CUDA: build from committed libs (Linux x64 sm_86 only)
+  # CUDA: build from committed libs (Linux x64 sm_86 only for now)
+  # CUDA: build from committed libs (Linux x64 sm_86 only for now)
   build-cuda:
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-22.04
-            platform: linux-x64-gpu
-            ort_archive: onnxruntime-linux-x64-gpu-1.23.0.tgz
-            lib_pattern: "libonnxruntime*.so*"
+            platform: linux-x64
             wheel_plat: manylinux_2_17_x86_64
-          - os: windows-latest
-            platform: win-x64-gpu
-            ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
-            lib_pattern: "*onnx*.dll"
-            wheel_plat: win_amd64
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -93,11 +89,8 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
 
-      - name: Download ORT
-        run: just _download-ort-cuda ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
-
       - name: Build wheel
-        run: just build-ort-cuda
+        run: uv build --wheel polars-fastembed-cuda
 
       - name: Rename wheel with platform tag
         shell: bash
@@ -148,9 +141,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-22.04
-            platform: linux-x64-gpu
-          - os: windows-latest
-            platform: win-x64-gpu
+            platform: linux-x64
 
     runs-on: ${{ matrix.os }}
     steps:

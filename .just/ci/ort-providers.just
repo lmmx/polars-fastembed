@@ -61,3 +61,51 @@ test-ort-cuda wheel_dir:
     uv pip install --python test-env pytest
     uv pip install --python test-env {{wheel_dir}}/*.whl
     uv run --python test-env pytest polars-fastembed-cuda/tests -v
+
+# Build CUDA provider locally (requires CUDA toolkit)
+build-local-cuda-provider sm_arch="86":
+    #!/usr/bin/env bash
+    set -e
+
+    REPO_ROOT="$(pwd)"
+    ORT_BUILD_DIR="$HOME/lab/ort/build"
+    ORT_VERSION="1.23.0"
+
+    cd "$ORT_BUILD_DIR"
+    rm -rf onnxruntime
+    git clone --recursive --depth 1 --branch v${ORT_VERSION} https://github.com/microsoft/onnxruntime
+
+    # Apply patch for gather_block_quantized.cu
+    cp "$REPO_ROOT/scripts/cuda-patches/gather_block_quantized.cu" \
+       onnxruntime/onnxruntime/contrib_ops/cuda/quantization/gather_block_quantized.cu
+
+    cd onnxruntime
+
+    ./build.sh \
+      --config Release \
+      --build_shared_lib \
+      --parallel \
+      --use_cuda \
+      --cuda_home /usr/lib/nvidia-cuda-toolkit \
+      --cudnn_home /usr \
+      --cmake_extra_defines CMAKE_CUDA_ARCHITECTURES="{{sm_arch}}" \
+      --cmake_extra_defines onnxruntime_USE_FLASH_ATTENTION=OFF \
+      --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+      --cmake_extra_defines onnxruntime_USE_MEMORY_EFFICIENT_ATTENTION=OFF \
+      --cmake_extra_defines CMAKE_CXX_FLAGS="-Wno-error=attributes" \
+      --cmake_extra_defines CMAKE_CUDA_FLAGS="-Xcompiler=-Wno-error=attributes" \
+      --skip_tests
+
+    # Copy to provider package back in repo
+    LIBS_DIR="$REPO_ROOT/polars-fastembed-cuda/python/polars_fastembed_cuda/libs"
+    mkdir -p "$LIBS_DIR"
+    cp build/Linux/Release/libonnxruntime.so.${ORT_VERSION} "$LIBS_DIR/"
+    cp build/Linux/Release/libonnxruntime_providers_cuda.so "$LIBS_DIR/"
+    cp build/Linux/Release/libonnxruntime_providers_shared.so "$LIBS_DIR/"
+
+    upx --best "$LIBS_DIR/libonnxruntime.so.${ORT_VERSION}"
+    upx --best "$LIBS_DIR/libonnxruntime_providers_cuda.so"
+
+    cd "$LIBS_DIR"
+    ln -sf libonnxruntime.so.${ORT_VERSION} libonnxruntime.so.1
+    ln -sf libonnxruntime.so.${ORT_VERSION} libonnxruntime.so

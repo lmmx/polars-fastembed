@@ -1,0 +1,185 @@
+name: Build ORT Provider Packages
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-cpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x64
+            ort_archive: onnxruntime-linux-x64-1.23.0.tgz
+            lib_pattern: "libonnxruntime.so*"
+            wheel_plat: manylinux_2_17_x86_64
+          - os: ubuntu-22.04
+            platform: linux-aarch64
+            ort_archive: onnxruntime-linux-aarch64-1.23.0.tgz
+            lib_pattern: "libonnxruntime.so*"
+            wheel_plat: manylinux_2_17_aarch64
+          - os: macos-14
+            platform: osx-arm64
+            ort_archive: onnxruntime-osx-arm64-1.23.0.tgz
+            lib_pattern: "libonnxruntime*.dylib"
+            wheel_plat: macosx_14_0_arm64
+          - os: macos-14
+            platform: osx-x86_64
+            ort_archive: onnxruntime-osx-x86_64-1.23.0.tgz
+            lib_pattern: "libonnxruntime*.dylib"
+            wheel_plat: macosx_14_0_x86_64
+          - os: windows-latest
+            platform: win-x64
+            ort_archive: onnxruntime-win-x64-1.23.0.zip
+            lib_pattern: "onnxruntime.dll"
+            wheel_plat: win_amd64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Download ORT
+        run: just _download-ort-cpu ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
+
+      - name: Build wheel
+        run: just build-ort-cpu
+
+      - name: Rename wheel with platform tag
+        shell: bash
+        run: just rename-wheel polars-fastembed-cpu ${{ matrix.wheel_plat }}
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v5
+        with:
+          name: wheels-cpu-${{ matrix.platform }}
+          path: polars-fastembed-cpu/dist/*.whl
+
+  build-cuda:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x64-gpu
+            ort_archive: onnxruntime-linux-x64-gpu-1.23.0.tgz
+            lib_pattern: "libonnxruntime.so*"
+            wheel_plat: manylinux_2_17_x86_64
+          - os: windows-latest
+            platform: win-x64-gpu
+            ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
+            lib_pattern: "onnxruntime.dll"
+            wheel_plat: win_amd64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Download ORT
+        run: just _download-ort-cuda ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
+
+      - name: Build wheel
+        run: just build-ort-cuda
+
+      - name: Rename wheel with platform tag
+        shell: bash
+        run: just rename-wheel polars-fastembed-cuda ${{ matrix.wheel_plat }}
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v5
+        with:
+          name: wheels-cuda-${{ matrix.platform }}
+          path: polars-fastembed-cuda/dist/*.whl
+
+  test-cpu:
+    needs: [build-cpu]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x64
+          - os: macos-14
+            platform: osx-arm64
+          # - os: macos-14
+          #   platform: osx-x86_64
+          - os: windows-latest
+            platform: win-x64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+
+      - uses: astral-sh/setup-uv@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: wheels-cpu-${{ matrix.platform }}
+          path: dist-cpu
+
+      - name: Test CPU provider wheel
+        run: just test-ort-cpu dist-cpu
+
+  test-cuda:
+    needs: [build-cuda]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x64-gpu
+          - os: windows-latest
+            platform: win-x64-gpu
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install just
+        uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
+
+      - uses: astral-sh/setup-uv@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: wheels-cuda-${{ matrix.platform }}
+          path: dist-cuda
+
+      - name: Test CUDA provider wheel
+        run: just test-ort-cuda dist-cuda
+
+  release-providers:
+    needs: [test-cpu, test-cuda]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/

@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 from __future__ import annotations
 
 import inspect
@@ -9,9 +10,21 @@ import polars_distance as pld
 from polars.api import register_dataframe_namespace
 from polars.plugins import register_plugin_function
 
-from polars_fastembed._polars_fastembed import clear_registry as _clear_registry
-from polars_fastembed._polars_fastembed import list_models as _list_models
-from polars_fastembed._polars_fastembed import register_model as _register_model
+from polars_fastembed._ort_loader import configure_ort
+
+# Set ORT_DYLIB_PATH before importing the Rust extension
+configure_ort()
+
+# Now safe to import Rust module
+from polars_fastembed._polars_fastembed import (
+    clear_registry as _clear_registry,
+)
+from polars_fastembed._polars_fastembed import (
+    list_models as _list_models,
+)
+from polars_fastembed._polars_fastembed import (
+    register_model as _register_model,
+)
 
 from .utils import parse_into_expr, parse_version
 
@@ -26,10 +39,7 @@ if parse_version(pl.__version__) < parse_version("0.20.16"):
 else:
     lib = Path(__file__).parent
 
-__all__ = ["embed_text"]
-
-
-# --- Re-exported Rust functions so users can import from polars_fastembed directly ---
+__all__ = ["embed_text", "register_model", "clear_registry", "list_models"]
 
 
 def register_model(model_name: str, providers: list[str] | None = None) -> None:
@@ -39,8 +49,7 @@ def register_model(model_name: str, providers: list[str] | None = None) -> None:
 
     Note: providers is not implemented yet (CPU vs. GPU etc).
     """
-    # _register_model(model_name, providers)
-    _register_model(model_name)
+    _register_model(model_name, providers)
 
 
 def clear_registry() -> None:

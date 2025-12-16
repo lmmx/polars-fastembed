@@ -15,3 +15,4 @@ target
 
 .fastembed_cache
 *.so
+*.so.*

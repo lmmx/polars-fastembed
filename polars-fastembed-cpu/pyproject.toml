@@ -1,0 +1,20 @@
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
+
+[project]
+name = "polars-fastembed-cpu"
+version = "0.1.5"
+description = "CPU ONNX Runtime provider for polars-fastembed"
+readme = "README.md"
+authors = [{name = "Louis Maddox", email = "louismmx@gmail.com"}]
+requires-python = ">=3.10"
+license = "MIT"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3"
+]
+
+[tool.uv.build-backend]
+module-root = "python"

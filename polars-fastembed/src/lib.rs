@@ -16,18 +16,10 @@ fn probe_ssl_certs() {
     openssl_probe::init_ssl_cert_env_vars();
 }
 
-#[cfg(feature = "ort-dynamic")]
-fn init_ort() {
-    // TODO: actually initialise it (must first build ONNX runtime from source)
-}
-
 // --- Start of no-op zone ---
 
 #[cfg(not(feature = "openssl-vendored"))]
 fn probe_ssl_certs() {}
-
-#[cfg(not(feature = "ort-dynamic"))]
-fn init_ort() {}
 
 // --- End of no-op zone ---
 

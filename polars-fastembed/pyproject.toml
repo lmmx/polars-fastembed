@@ -47,6 +47,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+cpu = ["polars-fastembed-cpu>=0.1.5"]
+cuda = ["polars-fastembed-cuda>=0.1.5"]
 polars-lts-cpu = [
   "polars[rtcompat]"
 ]

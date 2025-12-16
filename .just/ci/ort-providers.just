@@ -109,3 +109,35 @@ build-local-cuda-provider sm_arch="86":
     cd "$LIBS_DIR"
     ln -sf libonnxruntime.so.${ORT_VERSION} libonnxruntime.so.1
     ln -sf libonnxruntime.so.${ORT_VERSION} libonnxruntime.so
+
+# Compress libs with UPX (skips symlinks)
+[unix]
+compress-libs-upx dir:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd {{dir}}
+    shopt -s nullglob
+    for f in *.so *.so.* *.dylib *.dll; do
+        if [ -f "$f" ] && [ ! -L "$f" ]; then
+            upx --best "$f" || true
+        fi
+    done
+
+[windows]
+compress-libs-upx dir:
+    mise exec -- upx --best {{dir}}/*.dll
+
+# Check no file in wheel exceeds size limit (default 100MB)
+check-wheel-size dir max_mb="100":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    max_bytes=$(( {{max_mb}} * 1048576 ))
+    for whl in {{dir}}/*.whl; do
+        size=$(stat -c%s "$whl" 2>/dev/null || stat -f%z "$whl")
+        size_mb=$(( size / 1048576 ))
+        if [ "$size" -gt "$max_bytes" ]; then
+            echo "ERROR: $whl is ${size_mb}MB, exceeds {{max_mb}}MB limit"
+            exit 1
+        fi
+        echo "OK: $whl is ${size_mb}MB"
+    done

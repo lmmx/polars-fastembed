@@ -276,7 +276,7 @@ wheels = [
 
 [[package]]
 name = "polars-fastembed"
-version = "0.1.5"
+version = "0.1.6"
 source = { editable = "../polars-fastembed" }
 dependencies = [
     { name = "polars" },
@@ -288,8 +288,10 @@ requires-dist = [
     { name = "polars", specifier = ">=1.36.0" },
     { name = "polars", extras = ["rtcompat"], marker = "extra == 'polars-lts-cpu'" },
     { name = "polars-distance", specifier = ">=0.5.3" },
+    { name = "polars-fastembed-cpu", marker = "extra == 'cpu'", specifier = ">=0.1.5" },
+    { name = "polars-fastembed-cuda", marker = "extra == 'cuda'", specifier = ">=0.1.5" },
 ]
-provides-extras = ["polars-lts-cpu"]
+provides-extras = ["cpu", "cuda", "polars-lts-cpu"]
 
 [package.metadata.requires-dev]
 build = [

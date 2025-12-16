@@ -20,12 +20,12 @@ jobs:
           - os: ubuntu-22.04
             platform: linux-x64
             ort_archive: onnxruntime-linux-x64-1.23.0.tgz
-            lib_pattern: "libonnxruntime.so*"
+            lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
           - os: ubuntu-22.04
             platform: linux-aarch64
             ort_archive: onnxruntime-linux-aarch64-1.23.0.tgz
-            lib_pattern: "libonnxruntime.so*"
+            lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_aarch64
           - os: macos-14
             platform: osx-arm64
@@ -40,7 +40,7 @@ jobs:
           - os: windows-latest
             platform: win-x64
             ort_archive: onnxruntime-win-x64-1.23.0.zip
-            lib_pattern: "onnxruntime.dll"
+            lib_pattern: "*onnx*.dll"
             wheel_plat: win_amd64
 
     runs-on: ${{ matrix.os }}
@@ -76,12 +76,12 @@ jobs:
           - os: ubuntu-22.04
             platform: linux-x64-gpu
             ort_archive: onnxruntime-linux-x64-gpu-1.23.0.tgz
-            lib_pattern: "libonnxruntime.so*"
+            lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
           - os: windows-latest
             platform: win-x64-gpu
             ort_archive: onnxruntime-win-x64-gpu-1.23.0.zip
-            lib_pattern: "onnxruntime.dll"
+            lib_pattern: "*onnx*.dll"
             wheel_plat: win_amd64
 
     runs-on: ${{ matrix.os }}

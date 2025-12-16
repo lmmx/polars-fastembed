@@ -125,7 +125,7 @@ compress-libs-upx dir:
 
 [windows]
 compress-libs-upx dir:
-    powershell -Command "cd '{{dir}}'; Get-ChildItem -Filter '*.dll' | % { upx --best $$_.FullName }"
+    powershell -Command "cd '{{dir}}'; Get-ChildItem -Filter '*.dll' | % { mise exec -- upx --best $$_.FullName }"
 
 # Check no file in wheel exceeds size limit (default 100MB)
 check-wheel-size dir max_mb="100":

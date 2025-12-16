@@ -1,5 +1,4 @@
 # Release a new version, pass --help for options to `uv version --bump`
-[working-directory: 'polars-fastembed']
 release bump_level="patch":
     #!/usr/bin/env -S echo-comment --shell-flags="-e" --color bright-green
 
@@ -10,7 +9,9 @@ release bump_level="patch":
     fi
 
     # 📈 Bump the version in pyproject.toml (patch/minor/major: {{ bump_level }})
-    uv version --frozen --bump {{ bump_level }}
+    uv version --frozen --bump {{ bump_level }} --directory polars-fastembed
+    uv version --frozen --bump {{ bump_level }} --directory polars-fastembed-cpu
+    uv version --frozen --bump {{ bump_level }} --directory polars-fastembed-cuda
 
     # 📦 Stage all changes (including the version bump)
     git add --all
@@ -19,7 +20,7 @@ release bump_level="patch":
     git commit -m "chore(temp): version check"
 
     # ✂️  Extract the new version number that was just set, undo the commit
-    new_version=$(uv version --short)
+    new_version=$(uv version --short --directory polars-fastembed)
     git reset --soft HEAD~1
 
     # ✅ Stage everything again and create the real release commit

@@ -1,7 +1,5 @@
 from pathlib import Path
 
-__version__ = "0.1.5"
-
 
 def get_ort_lib_path() -> Path | None:
     """Return the path to the bundled ORT library, or None if not found."""

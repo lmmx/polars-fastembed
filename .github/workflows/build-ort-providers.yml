@@ -115,8 +115,8 @@ jobs:
             platform: linux-x64
           - os: macos-14
             platform: osx-arm64
-          - os: macos-14
-            platform: osx-x86_64
+          # - os: macos-14
+          #   platform: osx-x86_64
           - os: windows-latest
             platform: win-x64
 

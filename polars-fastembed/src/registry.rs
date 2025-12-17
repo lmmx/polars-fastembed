@@ -54,6 +54,8 @@ static DEFAULT_MODEL: Lazy<Arc<Mutex<TextEmbedding>>> = Lazy::new(|| {
     ))
 });
 
+static LAST_REGISTERED_MODEL: Lazy<RwLock<Option<String>>> = Lazy::new(|| RwLock::new(None));
+
 /// Extension trait to add dimension-related methods to TextEmbedding.
 pub trait TextEmbeddingExt {
     fn get_dimension(&self) -> usize;
@@ -134,8 +136,16 @@ pub fn register_model(
 
     eprintln!("Model '{}' loaded successfully", model_name);
 
+    {
+        let mut last = LAST_REGISTERED_MODEL.write().unwrap();
+        *last = Some(model_name.clone());
+    }
     map.insert(model_name, Arc::new(Mutex::new(embedder)));
     Ok(())
+}
+
+pub fn get_last_registered_model() -> Option<String> {
+    LAST_REGISTERED_MODEL.read().ok().and_then(|g| g.clone())
 }
 
 /// Clear the entire model registry (free memory).

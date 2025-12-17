@@ -13,8 +13,10 @@ pub struct EmbedTextKwargs {
 }
 
 fn list_idx_dtype(input_fields: &[Field]) -> PolarsResult<Field> {
+    let model_name = crate::registry::get_last_registered_model();
+
     // Get the embedder to retrieve the dimension
-    let embedder = get_or_load_model(&None)?;
+    let embedder = get_or_load_model(&model_name)?;
 
     // Use the extension trait to get the dimension
     use crate::registry::TextEmbeddingExt;

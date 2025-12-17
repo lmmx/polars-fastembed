@@ -18,8 +18,8 @@ from .schema import EMB_COL, TEXT_COL
 # DEFAULT_MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX"
 # DEFAULT_MODEL_ID = "permutans/Tarka-Embedding-150M-V1-ONNX"
 # DEFAULT_MODEL_ID = "snowflake/snowflake-arctic-embed-xs"
-# DEFAULT_MODEL_ID = "SnowflakeArcticEmbedXS"
-DEFAULT_MODEL_ID = "SnowflakeArcticEmbedXSQ"
+# DEFAULT_MODEL_ID = "SnowflakeArcticEmbedXSQ"
+DEFAULT_MODEL_ID = "SnowflakeArcticEmbedXS"
 QUERY = "Typed dictionaries and mappings"
 TOP_K = 5
 

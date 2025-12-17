@@ -14,7 +14,12 @@ from polars_fastembed import register_model
 from .dataset import load_peps
 from .schema import EMB_COL, TEXT_COL
 
-DEFAULT_MODEL_ID = "Xenova/all-MiniLM-L6-v2"
+# DEFAULT_MODEL_ID = "Xenova/all-MiniLM-L6-v2"
+# DEFAULT_MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX"
+# DEFAULT_MODEL_ID = "permutans/Tarka-Embedding-150M-V1-ONNX"
+# DEFAULT_MODEL_ID = "snowflake/snowflake-arctic-embed-xs"
+# DEFAULT_MODEL_ID = "SnowflakeArcticEmbedXS"
+DEFAULT_MODEL_ID = "SnowflakeArcticEmbedXSQ"
 QUERY = "Typed dictionaries and mappings"
 TOP_K = 5
 
@@ -37,6 +42,7 @@ def main():
     register_model(
         model_id,
         providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        # providers=["CPUExecutionProvider"],
     )
 
     emb_df = docs_df.fastembed.embed(

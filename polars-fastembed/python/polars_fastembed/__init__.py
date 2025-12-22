@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import polars as pl
-import polars_distance as pld
 from polars.api import register_dataframe_namespace
 from polars.plugins import register_plugin_function
 
@@ -20,6 +19,9 @@ from polars_fastembed._polars_fastembed import (
     clear_registry as _clear_registry,
 )
 from polars_fastembed._polars_fastembed import (
+    extract_topics as _extract_topics,
+)
+from polars_fastembed._polars_fastembed import (
     list_models as _list_models,
 )
 from polars_fastembed._polars_fastembed import (
@@ -31,7 +33,7 @@ from .utils import parse_into_expr, parse_version
 if TYPE_CHECKING:
     from polars.type_aliases import IntoExpr
 
-# Determine the correct plugin path (like your `lib` variable).
+# Determine the correct plugin path
 if parse_version(pl.__version__) < parse_version("0.20.16"):
     from polars.utils.udfs import _get_shared_lib_location
 
@@ -39,16 +41,16 @@ if parse_version(pl.__version__) < parse_version("0.20.16"):
 else:
     lib = Path(__file__).parent
 
-__all__ = ["embed_text", "register_model", "clear_registry", "list_models"]
+__all__ = [
+    "embed_text",
+    "register_model",
+    "clear_registry",
+    "list_models",
+]
 
 
 def register_model(model_name: str, providers: list[str] | None = None) -> None:
-    """
-    Register/load a model into the global registry by name or HF ID.
-    If it's already loaded, this is a no-op.
-
-    Note: providers is not implemented yet (CPU vs. GPU etc).
-    """
+    """Register/load a model into the global registry by name or HF ID."""
     _register_model(model_name, providers)
 
 
@@ -62,14 +64,8 @@ def list_models() -> list[str]:
     return _list_models()
 
 
-# --- End of Rust internal re-exports ---
-
-
 def plug(expr: IntoExpr, **kwargs) -> pl.Expr:
-    """
-    Wrap Polars' `register_plugin_function` helper to always
-    pass the same `lib` (the directory where _polars_fastembed.so/pyd lives).
-    """
+    """Wrap Polars' register_plugin_function helper."""
     func_name = inspect.stack()[1].function
     into_expr = parse_into_expr(expr)
     return register_plugin_function(
@@ -82,14 +78,27 @@ def plug(expr: IntoExpr, **kwargs) -> pl.Expr:
 
 
 def embed_text(expr: IntoExpr, *, model_id: str | None = None) -> pl.Expr:
-    """
-    Calls the Rust `embed_text` expression from `_polars_fastembed`.
-    We pass `model_id` as a kwarg to the Rust side if it was set.
-    """
-    return plug(expr, **{"model_id": model_id})
+    """Embed text using the specified model."""
+    return plug(expr, model_id=model_id)
 
 
-# --- Plugin namespace ---
+def s3_fit_transform(
+    expr: IntoExpr,
+    *,
+    n_components: int = 10,
+    model_id: str | None = None,
+) -> pl.Expr:
+    """
+    Fit S³ (Semantic Signal Separation) and return document-topic weights.
+
+    Note: This is a corpus-level operation - all documents are used to fit the model.
+    """
+    return plug(expr, n_components=n_components, model_id=model_id)
+
+
+# =============================================================================
+# DataFrame Namespace
+# =============================================================================
 
 
 @register_dataframe_namespace("fastembed")
@@ -104,14 +113,10 @@ class FastEmbedPlugin:
         output_column: str = "embedding",
         join_columns: bool = True,
     ) -> pl.DataFrame:
-        """
-        Mirror the original: embed text from `columns` using `model_name`.
-        If `model_name` not in the registry yet, it gets loaded automatically (or call register_model first).
-        """
+        """Embed text from columns using the specified model."""
         if isinstance(columns, str):
             columns = [columns]
 
-        # Optionally concat multiple columns
         if join_columns and len(columns) > 1:
             self._df = self._df.with_columns(
                 pl.concat_str(columns, separator=" ").alias("_text_to_embed"),
@@ -120,7 +125,6 @@ class FastEmbedPlugin:
         else:
             text_col = columns[0]
 
-        # Now call the Rust expression
         new_df = self._df.with_columns(
             embed_text(text_col, model_id=model_name).alias(output_column),
         )
@@ -139,19 +143,16 @@ class FastEmbedPlugin:
         similarity_metric: str = "cosine",
         add_similarity_column: bool = True,
     ) -> pl.DataFrame:
-        """
-        Sort/filter rows by similarity to the given `query` using `model_name`.
-        The embeddings for each row are read from `embedding_column`.
-        """
+        """Sort/filter rows by similarity to the given query."""
+        import polars_distance as pld
+
         if embedding_column not in self._df.columns:
             raise ValueError(f"Column '{embedding_column}' not found in DataFrame.")
 
-        # 1) Embed the query and add to each row
         q_df = pl.DataFrame({"_q": [query]}).with_columns(
             embed_text("_q", model_id=model_name).alias("_q_emb"),
         )
 
-        # Cross join to pair query with all rows
         result_df = self._df.join(q_df.select("_q_emb"), how="cross")
 
         if similarity_metric == "cosine":
@@ -164,10 +165,8 @@ class FastEmbedPlugin:
         if add_similarity_column:
             result_df = result_df.with_columns(similarity_expr.alias("similarity"))
 
-        # Clean up temp column
         result_df = result_df.drop("_q_emb")
 
-        # 3) Filter, sort, and limit
         if threshold is not None:
             result_df = result_df.filter(pl.col("similarity") >= threshold)
 
@@ -177,3 +176,61 @@ class FastEmbedPlugin:
             result_df = result_df.head(k)
 
         return result_df
+
+    def s3_topics(
+        self,
+        text_column: str,
+        n_components: int = 10,
+        model_name: str | None = None,
+        top_n: int = 10,
+    ) -> pl.DataFrame:
+        """
+        Extract topics using S³ (Semantic Signal Separation).
+
+        Returns the DataFrame with added columns:
+        - topic_weights: List of weights for each topic
+        - dominant_topic: Index of the highest-weight topic
+
+        Args:
+            text_column: Column containing text documents
+            n_components: Number of topics to extract
+            model_name: Embedding model ID (uses default if None)
+            top_n: Number of top terms per topic (for topic descriptions)
+
+        Returns:
+            DataFrame with topic_weights and dominant_topic columns
+        """
+        return self._df.with_columns(
+            s3_fit_transform(
+                text_column,
+                n_components=n_components,
+                model_id=model_name,
+            ).alias("topic_weights"),
+        ).with_columns(
+            pl.col("topic_weights")
+            .list.eval(pl.element().abs().arg_max())
+            .list.first()
+            .alias("dominant_topic"),
+        )
+
+    def extract_topics(
+        self,
+        text_column: str,
+        n_components: int = 10,
+        model_name: str | None = None,
+        top_n: int = 10,
+    ) -> list[list[tuple[str, float]]]:
+        """
+        Extract topic descriptions (top terms per topic).
+
+        Args:
+            text_column: Column containing text documents
+            n_components: Number of topics to extract
+            model_name: Embedding model ID (uses default if None)
+            top_n: Number of top terms per topic
+
+        Returns:
+            List of topics, each topic is a list of (term, importance) tuples
+        """
+        documents = self._df[text_column].drop_nulls().to_list()
+        return _extract_topics(documents, n_components, model_name, top_n)

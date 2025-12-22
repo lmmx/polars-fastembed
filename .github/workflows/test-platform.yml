@@ -64,6 +64,14 @@ jobs:
       - name: Build and install extension
         run: uv run --no-sync --frozen maturin develop --release ${{ inputs.features }}
 
+      - name: Debug ORT library
+        if: inputs.os == 'linux'
+        run: |
+          ORT_PATH=$(uv run python -c "import polars_fastembed_cpu as l; print(l.get_ort_lib_path())")
+          echo "Checking $ORT_PATH"
+          ldd "$ORT_PATH" || true
+          file "$ORT_PATH"
+
       - name: Run tests
         shell: bash
         run: |

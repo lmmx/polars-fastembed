@@ -66,7 +66,7 @@ jobs:
         if: matrix.can_upx && runner.os == 'macOS'
         run: brew install upx
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
 
       - name: Download ORT
         run: just _download-ort-cpu ${{ matrix.platform }} ${{ matrix.ort_archive }} "${{ matrix.lib_pattern }}"
@@ -128,7 +128,7 @@ jobs:
         if: matrix.can_upx
         run: mise use upx
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
 
       - name: Download ORT
         if: matrix.download_ort
@@ -178,7 +178,7 @@ jobs:
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
 
       - uses: actions/download-artifact@v5
         with:
@@ -226,7 +226,7 @@ jobs:
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
 
       - uses: actions/download-artifact@v5
         with:

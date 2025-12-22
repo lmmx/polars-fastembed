@@ -180,7 +180,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           name: wheels-cpu-${{ matrix.platform }}
           path: dist-cpu
@@ -228,7 +228,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           name: wheels-cuda-${{ matrix.platform }}
           path: dist-cuda
@@ -262,7 +262,7 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v7
         with:
           pattern: wheels-*
           merge-multiple: true

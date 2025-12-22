@@ -191,6 +191,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Rust cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+        with:
+          workspaces: polars-fastembed
+          key: ${{ matrix.os }}-${{ matrix.platform }}
+
       - name: Integration test with polars-fastembed
         working-directory: polars-fastembed
         run: |
@@ -229,6 +235,12 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1
+        with:
+          workspaces: polars-fastembed
+          key: ${{ matrix.os }}-${{ matrix.platform }}
 
       - name: Integration test with polars-fastembed
         working-directory: polars-fastembed

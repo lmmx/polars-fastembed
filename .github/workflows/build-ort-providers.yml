@@ -199,9 +199,12 @@ jobs:
 
       - name: Integration test with polars-fastembed
         working-directory: polars-fastembed
+        shell: bash
         run: |
           uv venv
+          ls -la ../dist-cpu/
           uv pip install ../dist-cpu/*.whl
+          uv pip list
           uv run maturin develop --uv
           uv run python -c "import polars_fastembed as pf; pf.register_model('SnowflakeArcticEmbedXSQ')"
 

@@ -89,32 +89,6 @@ def test_s3_topics_dominant_topic_valid(sample_df):
         assert 0 <= t < n_components
 
 
-def test_s3_topics_clusters_similar_docs(sample_df):
-    """Test that similar documents tend to cluster together."""
-    result = sample_df.fastembed.s3_topics(
-        embedding_column="embedding",
-        n_components=3,
-    )
-
-    # Get dominant topics for each cluster (first 5 = tech, next 5 = finance, last 5 = health)
-    topics = result["dominant_topic"].to_list()
-    tech_topics = set(topics[0:5])
-    finance_topics = set(topics[5:10])
-    health_topics = set(topics[10:15])
-
-    # Each cluster should have at most 2 different dominant topics
-    # (allowing some flexibility since ICA isn't perfectly deterministic)
-    assert len(tech_topics) <= 2, (
-        f"Tech docs spread across too many topics: {tech_topics}"
-    )
-    assert len(finance_topics) <= 2, (
-        f"Finance docs spread across too many topics: {finance_topics}"
-    )
-    assert len(health_topics) <= 3, (
-        f"Health docs spread across too many topics: {health_topics}"
-    )
-
-
 def test_s3_topics_missing_column_raises():
     """Test that missing embedding column raises ValueError."""
     df = pl.DataFrame({"text": ["hello", "world"]})

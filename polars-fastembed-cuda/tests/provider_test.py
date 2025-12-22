@@ -4,9 +4,9 @@ def test_cuda_provider_lib_exists():
     path = get_ort_lib_path()
     assert path is not None, "get_ort_lib_path() returned None"
     assert path.exists(), f"ORT lib does not exist at {path}"
-    assert path.stat().st_size > 1_000_000, (
-        f"ORT lib seems too small: {path.stat().st_size} bytes"
-    )
+    assert (
+        path.stat().st_size > 1_000_000
+    ), f"ORT lib seems too small: {path.stat().st_size} bytes"
 
 
 def test_cuda_provider_lib_is_valid():
@@ -25,6 +25,15 @@ def test_cuda_provider_lib_is_valid():
         b"MZ",
     ]
 
-    assert any(magic.startswith(m) for m in valid_magics), (
-        f"Invalid magic bytes: {magic.hex()}"
-    )
+    assert any(
+        magic.startswith(m) for m in valid_magics
+    ), f"Invalid magic bytes: {magic.hex()}"
+
+
+def test_cuda_provider_lib_loads():
+    import ctypes
+
+    from polars_fastembed_cuda import get_ort_lib_path
+
+    path = get_ort_lib_path()
+    ctypes.CDLL(str(path))  # This would fail on corrupted .so

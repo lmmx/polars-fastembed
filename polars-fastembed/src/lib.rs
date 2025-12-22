@@ -9,6 +9,7 @@ use pyo3_polars::PolarsAllocator;
 mod expressions;
 mod model_suggestions;
 mod registry;
+mod s3;
 
 // See discussion 162
 #[cfg(feature = "openssl-vendored")]
@@ -32,6 +33,7 @@ fn _polars_fastembed(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(registry::register_model, m)?)?;
     m.add_function(wrap_pyfunction!(registry::clear_registry, m)?)?;
     m.add_function(wrap_pyfunction!(registry::list_models, m)?)?;
+    m.add_function(wrap_pyfunction!(s3::extract_topics, m)?)?;
 
     Ok(())
 }

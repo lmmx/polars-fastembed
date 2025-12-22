@@ -8,13 +8,11 @@ use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-use crate::registry::{get_or_load_model, TextEmbeddingExt};
+use crate::registry::get_or_load_model;
 
 #[derive(Deserialize)]
 pub struct S3Kwargs {
     pub n_components: usize,
-    #[serde(default)]
-    pub model_id: Option<String>,
 }
 
 fn s3_output_type(input_fields: &[Field]) -> PolarsResult<Field> {
@@ -49,18 +47,15 @@ impl S3Model {
         let mean = embeddings.mean_axis(Axis(0)).unwrap();
         let centered = &embeddings - &mean;
 
-        // Create dataset - need owned array
         let centered_owned = centered.to_owned();
         let dataset = DatasetBase::from(centered_owned.clone());
 
-        // Fit FastICA using linfa
         let ica_model = FastIca::params()
             .ncomponents(n_components)
             .gfunc(GFunc::Logcosh(1.0))
             .fit(&dataset)
             .map_err(|e| PolarsError::ComputeError(format!("FastICA failed: {:?}", e).into()))?;
 
-        // Transform to get document-topic matrix using Predict trait
         let document_topics = ica_model.predict(&centered_owned);
 
         Ok(S3Model {
@@ -70,7 +65,6 @@ impl S3Model {
         })
     }
 
-    /// Project new embeddings onto topic space
     pub fn transform(&self, embeddings: &Array2<f64>) -> Array2<f64> {
         let centered = embeddings - &self.mean;
         self.ica_model.predict(&centered)
@@ -78,60 +72,67 @@ impl S3Model {
 }
 
 // ============================================================================
-// Polars Expression
+// Helper: Extract embeddings from Array column
+// ============================================================================
+
+fn extract_embedding_matrix(series: &Series) -> PolarsResult<(Array2<f64>, Vec<usize>)> {
+    let arr = series.array()?;
+    let dim = match series.dtype() {
+        DataType::Array(_, size) => *size,
+        _ => polars_bail!(InvalidOperation: "Expected Array type"),
+    };
+
+    let mut valid_indices: Vec<usize> = Vec::new();
+    let mut embeddings: Vec<f64> = Vec::new();
+
+    for (i, opt_arr) in arr.into_iter().enumerate() {
+        if let Some(inner) = opt_arr {
+            let f32_chunked = inner.f32()?;
+            let values: Vec<f64> = f32_chunked
+                .into_iter()
+                .map(|opt_v| opt_v.unwrap_or(0.0) as f64)
+                .collect();
+
+            if values.len() == dim {
+                embeddings.extend(values);
+                valid_indices.push(i);
+            }
+        }
+    }
+
+    if valid_indices.is_empty() {
+        polars_bail!(ComputeError: "No valid embeddings found");
+    }
+
+    let n_docs = valid_indices.len();
+    let embedding_matrix = Array2::from_shape_vec((n_docs, dim), embeddings)
+        .map_err(|e| PolarsError::ComputeError(format!("Shape error: {:?}", e).into()))?;
+
+    Ok((embedding_matrix, valid_indices))
+}
+
+// ============================================================================
+// Polars Expression: Fit topics from embedding column
 // ============================================================================
 
 #[polars_expr(output_type_func=s3_output_type)]
 pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
 
-    if s.dtype() != &DataType::String {
-        polars_bail!(InvalidOperation:
-            "s3_fit_transform requires String column, got {:?}",
+    // Validate input is an Array type
+    match s.dtype() {
+        DataType::Array(inner, _) if **inner == DataType::Float32 => {},
+        _ => polars_bail!(InvalidOperation:
+            "s3_fit_transform requires Array[f32, n] column, got {:?}",
             s.dtype()
-        );
+        ),
     }
 
-    let embedder = get_or_load_model(&kwargs.model_id)?;
-    let dim = embedder.get_dimension();
-
-    let mut embedder_guard = embedder
-        .lock()
-        .map_err(|_| PolarsError::ComputeError("Lock poison".into()))?;
-
-    let ca = s.str()?;
-
-    let mut texts: Vec<&str> = Vec::new();
-    let mut valid_indices: Vec<usize> = Vec::new();
-
-    for (i, opt_str) in ca.into_iter().enumerate() {
-        if let Some(text) = opt_str {
-            texts.push(text);
-            valid_indices.push(i);
-        }
-    }
-
-    if texts.is_empty() {
-        polars_bail!(ComputeError: "No documents to process");
-    }
-
-    let all_embeddings = embedder_guard
-        .embed(texts.clone(), None)
-        .map_err(|e| PolarsError::ComputeError(format!("Embedding failed: {:?}", e).into()))?;
-
-    drop(embedder_guard);
-
-    let n_docs = texts.len();
-    let mut embedding_matrix = Array2::<f64>::zeros((n_docs, dim));
-    for (i, emb) in all_embeddings.iter().enumerate() {
-        for (j, &val) in emb.iter().enumerate() {
-            embedding_matrix[[i, j]] = val as f64;
-        }
-    }
-
+    let (embedding_matrix, valid_indices) = extract_embedding_matrix(s)?;
     let model = S3Model::fit(embedding_matrix, kwargs.n_components)?;
 
-    let total_rows = ca.len();
+    // Build output
+    let total_rows = s.len();
     let n_components = model.document_topics.ncols();
 
     let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
@@ -161,34 +162,34 @@ pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Ser
 }
 
 // ============================================================================
-// Python Function
+// Python Function: Extract topics with term labels
 // ============================================================================
 
 #[pyfunction]
-#[pyo3(signature = (documents, n_components, model_id=None, top_n=10))]
+#[pyo3(signature = (embeddings, texts, n_components, model_id=None, top_n=10))]
 pub fn extract_topics(
-    documents: Vec<String>,
+    embeddings: Vec<Vec<f32>>,
+    texts: Vec<String>,
     n_components: usize,
     model_id: Option<String>,
     top_n: usize,
 ) -> PyResult<Vec<Vec<(String, f32)>>> {
-    let embedder = get_or_load_model(&model_id)
-        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    let n_docs = embeddings.len();
+    if n_docs != texts.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "embeddings and texts must have same length"
+        ));
+    }
 
-    let dim = embedder.get_dimension();
+    if n_docs == 0 {
+        return Err(pyo3::exceptions::PyValueError::new_err("No documents provided"));
+    }
 
-    let mut guard = embedder
-        .lock()
-        .map_err(|_| pyo3::exceptions::PyRuntimeError::new_err("Lock poison"))?;
+    let dim = embeddings[0].len();
 
-    let doc_refs: Vec<&str> = documents.iter().map(|s| s.as_str()).collect();
-    let doc_embeddings = guard
-        .embed(doc_refs, None)
-        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("{:?}", e)))?;
-
-    let n_docs = documents.len();
+    // Build embedding matrix from provided embeddings
     let mut embedding_matrix = Array2::<f64>::zeros((n_docs, dim));
-    for (i, emb) in doc_embeddings.iter().enumerate() {
+    for (i, emb) in embeddings.iter().enumerate() {
         for (j, &val) in emb.iter().enumerate() {
             embedding_matrix[[i, j]] = val as f64;
         }
@@ -197,9 +198,9 @@ pub fn extract_topics(
     let model = S3Model::fit(embedding_matrix, n_components)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
-    // Build vocabulary
+    // Build vocabulary from texts
     let mut vocab: HashMap<String, usize> = HashMap::new();
-    for doc in &documents {
+    for doc in &texts {
         for word in doc.split_whitespace() {
             let clean: String = word
                 .to_lowercase()
@@ -221,6 +222,14 @@ pub fn extract_topics(
     if vocab_list.is_empty() {
         return Ok(vec![vec![]; n_components]);
     }
+
+    // Only here do we need the embedder - for vocabulary words
+    let embedder = get_or_load_model(&model_id)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+
+    let mut guard = embedder
+        .lock()
+        .map_err(|_| pyo3::exceptions::PyRuntimeError::new_err("Lock poison"))?;
 
     let vocab_refs: Vec<&str> = vocab_list.iter().map(|s| s.as_str()).collect();
     let word_embeddings_raw = guard

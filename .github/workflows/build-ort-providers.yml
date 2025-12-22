@@ -28,7 +28,7 @@ jobs:
             ort_archive: onnxruntime-linux-aarch64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_aarch64
-            can_upx: true
+            can_upx: false
           - os: macos-14
             platform: osx-arm64
             ort_archive: onnxruntime-osx-arm64-1.23.0.tgz

@@ -28,3 +28,12 @@ def test_cuda_provider_lib_is_valid():
     assert any(magic.startswith(m) for m in valid_magics), (
         f"Invalid magic bytes: {magic.hex()}"
     )
+
+
+def test_cuda_provider_lib_loads():
+    import ctypes
+
+    from polars_fastembed_cuda import get_ort_lib_path
+
+    path = get_ort_lib_path()
+    ctypes.CDLL(str(path))  # This would fail on corrupted .so

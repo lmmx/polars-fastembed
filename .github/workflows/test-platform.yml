@@ -59,10 +59,24 @@ jobs:
           sudo apt-get install -y pkg-config libssl-dev
 
       - name: Create venv and install dependencies
-        run: uv sync --group test
+        run: uv sync --group test --extra cpu
 
       - name: Build and install extension
         run: uv run --no-sync --frozen maturin develop --release ${{ inputs.features }}
 
+      - name: Debug ORT library
+        if: inputs.os == 'linux'
+        run: |
+          ORT_PATH=$(uv run python -c "import polars_fastembed_cpu as l; print(l.get_ort_lib_path())")
+          echo "Checking $ORT_PATH"
+          ldd "$ORT_PATH" || true
+          file "$ORT_PATH"
+
       - name: Run tests
-        run: uv run --no-sync --frozen pytest -s -v
+        shell: bash
+        run: |
+          if [ "${{ inputs.os }}" = "linux" ]; then
+            export ORT_DYLIB_PATH=$(uv run python -c "import polars_fastembed_cpu as l; print(l.get_ort_lib_path())")
+            echo "ORT_DYLIB_PATH=$ORT_DYLIB_PATH"
+          fi
+          uv run --no-sync --frozen pytest -s -v

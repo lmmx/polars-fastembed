@@ -227,6 +227,17 @@ jobs:
       - name: Test CUDA provider wheel
         run: just test-ort-cuda dist-cuda
 
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Integration test with polars-fastembed
+        working-directory: polars-fastembed
+        run: |
+          uv venv
+          uv pip install ../dist-cuda/*.whl
+          uv run maturin develop --uv
+          uv run python -c "import polars_fastembed as pf; pf.register_model('SnowflakeArcticEmbedXSQ')"
+
   release-providers:
     needs: [test-cpu, test-cuda]
     runs-on: ubuntu-latest

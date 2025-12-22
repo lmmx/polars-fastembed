@@ -86,14 +86,15 @@ def s3_fit_transform(
     expr: IntoExpr,
     *,
     n_components: int = 10,
-    model_id: str | None = None,
 ) -> pl.Expr:
     """
-    Fit S³ (Semantic Signal Separation) and return document-topic weights.
+    Fit S³ (Semantic Signal Separation) on an embedding column and return document-topic weights.
 
-    Note: This is a corpus-level operation - all documents are used to fit the model.
+    Args:
+        expr: An embedding column (Array[f32, n])
+        n_components: Number of topics to extract
     """
-    return plug(expr, n_components=n_components, model_id=model_id)
+    return plug(expr, n_components=n_components)
 
 
 # =============================================================================
@@ -179,32 +180,30 @@ class FastEmbedPlugin:
 
     def s3_topics(
         self,
-        text_column: str,
+        embedding_column: str = "embedding",
         n_components: int = 10,
-        model_name: str | None = None,
-        top_n: int = 10,
     ) -> pl.DataFrame:
         """
-        Extract topics using S³ (Semantic Signal Separation).
+        Extract topics using S³ (Semantic Signal Separation) from existing embeddings.
 
         Returns the DataFrame with added columns:
         - topic_weights: List of weights for each topic
         - dominant_topic: Index of the highest-weight topic
 
         Args:
-            text_column: Column containing text documents
+            embedding_column: Column containing pre-computed embeddings (Array[f32, n])
             n_components: Number of topics to extract
-            model_name: Embedding model ID (uses default if None)
-            top_n: Number of top terms per topic (for topic descriptions)
 
         Returns:
             DataFrame with topic_weights and dominant_topic columns
         """
+        if embedding_column not in self._df.columns:
+            raise ValueError(f"Column '{embedding_column}' not found in DataFrame.")
+
         return self._df.with_columns(
             s3_fit_transform(
-                text_column,
+                embedding_column,
                 n_components=n_components,
-                model_id=model_name,
             ).alias("topic_weights"),
         ).with_columns(
             pl.col("topic_weights")
@@ -215,22 +214,36 @@ class FastEmbedPlugin:
 
     def extract_topics(
         self,
-        text_column: str,
+        embedding_column: str = "embedding",
+        text_column: str | None = None,
         n_components: int = 10,
         model_name: str | None = None,
         top_n: int = 10,
     ) -> list[list[tuple[str, float]]]:
         """
-        Extract topic descriptions (top terms per topic).
+        Extract topic descriptions (top terms per topic) from existing embeddings.
 
         Args:
-            text_column: Column containing text documents
+            embedding_column: Column containing pre-computed embeddings (Array[f32, n])
+            text_column: Column containing text (for vocabulary extraction)
             n_components: Number of topics to extract
-            model_name: Embedding model ID (uses default if None)
+            model_name: Embedding model ID (needed to embed vocabulary words)
             top_n: Number of top terms per topic
 
         Returns:
             List of topics, each topic is a list of (term, importance) tuples
         """
-        documents = self._df[text_column].drop_nulls().to_list()
-        return _extract_topics(documents, n_components, model_name, top_n)
+        if embedding_column not in self._df.columns:
+            raise ValueError(f"Column '{embedding_column}' not found in DataFrame.")
+
+        if text_column is None:
+            raise ValueError("text_column is required for vocabulary extraction")
+
+        if text_column not in self._df.columns:
+            raise ValueError(f"Column '{text_column}' not found in DataFrame.")
+
+        # Get embeddings as list of lists
+        embeddings = self._df[embedding_column].drop_nulls().to_list()
+        texts = self._df[text_column].drop_nulls().to_list()
+
+        return _extract_topics(embeddings, texts, n_components, model_name, top_n)

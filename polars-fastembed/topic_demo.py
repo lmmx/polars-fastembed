@@ -45,21 +45,29 @@ model_id = "Xenova/bge-small-en-v1.5"
 print("Registering model...")
 register_model(model_id, providers=["CPUExecutionProvider"])
 
-df = pl.DataFrame({"text": docs})
+# =============================================================================
+# Step 1: Embed documents ONCE
+# =============================================================================
+print("\nEmbedding documents...")
 
-print(f"\nExtracting 3 topics from {len(docs)} documents...\n")
+df = pl.DataFrame({"text": docs}).with_columns(
+    pl.col("text").fastembed.embed(model_name=model_id).alias("embedding"),
+)
+
+print(f"Embedded {len(docs)} documents.\n")
 
 # =============================================================================
-# Method 1: Get topic descriptions (top terms per topic)
+# Step 2: Get topic descriptions (top terms per topic)
 # =============================================================================
 print("=" * 60)
 print("DISCOVERED TOPICS")
 print("=" * 60)
 
 topics = df.fastembed.extract_topics(
-    text_column="text",
+    embedding_column="embedding",
+    text_column="text",  # needed for vocabulary extraction
     n_components=3,
-    model_name=model_id,
+    model_name=model_id,  # needed for embedding vocabulary words
     top_n=8,
 )
 
@@ -68,16 +76,15 @@ for i, topic in enumerate(topics):
     print(f"\nTopic {i}: {', '.join(terms)}")
 
 # =============================================================================
-# Method 2: Get document-topic assignments
+# Step 3: Get document-topic assignments (from existing embeddings)
 # =============================================================================
 print("\n" + "=" * 60)
 print("DOCUMENT-TOPIC ASSIGNMENTS")
 print("=" * 60)
 
 result = df.fastembed.s3_topics(
-    text_column="text",
+    embedding_column="embedding",
     n_components=3,
-    model_name=model_id,
 )
 
 # Show documents grouped by dominant topic

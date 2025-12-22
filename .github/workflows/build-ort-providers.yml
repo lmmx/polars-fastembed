@@ -17,13 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux-x64
             ort_archive: onnxruntime-linux-x64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
             can_upx: true
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux-aarch64
             ort_archive: onnxruntime-linux-aarch64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.so*"
@@ -100,7 +100,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux-x64-gpu
             wheel_plat: manylinux_2_17_x86_64
             download_ort: false  # Use committed libs
@@ -162,7 +162,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux-x64
           - os: macos-14
             platform: osx-arm64
@@ -194,7 +194,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux-x64-gpu
           # - os: windows-latest
           #   platform: win-x64-gpu

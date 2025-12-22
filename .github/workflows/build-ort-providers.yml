@@ -22,7 +22,7 @@ jobs:
             ort_archive: onnxruntime-linux-x64-1.23.0.tgz
             lib_pattern: "libonnxruntime*.so*"
             wheel_plat: manylinux_2_17_x86_64
-            can_upx: true
+            can_upx: false
           - os: ubuntu-24.04
             platform: linux-aarch64
             ort_archive: onnxruntime-linux-aarch64-1.23.0.tgz

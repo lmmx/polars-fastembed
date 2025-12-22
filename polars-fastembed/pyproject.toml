@@ -15,7 +15,7 @@ test = [
 
 [project]
 name = "polars_fastembed"
-version = "0.1.11"
+version = "0.1.12"
 description = "A Polars plugin for text embeddings in DataFrames"
 dependencies = [
   "polars>=1.36.0",

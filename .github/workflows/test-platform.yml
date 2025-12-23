@@ -56,7 +56,17 @@ jobs:
         working-directory: .
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y pkg-config libssl-dev
+          sudo apt-get install -y pkg-config libssl-dev libopenblas-dev
+
+      - name: Setup platform dependencies (macOS)
+        if: inputs.os == 'macos'
+        run: brew install openblas
+
+      - name: Setup platform dependencies (Windows)
+        if: inputs.os == 'windows'
+        run: |
+          vcpkg install openblas:x64-windows
+          echo "OPENBLAS_PATH=C:/vcpkg/installed/x64-windows" >> $env:GITHUB_ENV
 
       - name: Create venv and install dependencies
         run: uv sync --group test --extra cpu

@@ -183,13 +183,6 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install openblas
 
-      - name: Install OpenBLAS (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          # Intel MKL via nuget (fast, pre-built)
-          nuget install intelmkl.devel.win-x64 -Version 2024.0.0.49673 -OutputDirectory mkl
-          echo "MKLROOT=${{ github.workspace }}/mkl/intelmkl.devel.win-x64.2024.0.0.49673" >> $env:GITHUB_ENV
-
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just
 
@@ -245,13 +238,6 @@ jobs:
       - name: Install OpenBLAS (macOS)
         if: runner.os == 'macOS'
         run: brew install openblas
-
-      - name: Install OpenBLAS (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          # Intel MKL via nuget (fast, pre-built)
-          nuget install intelmkl.devel.win-x64 -Version 2024.0.0.49673 -OutputDirectory mkl
-          echo "MKLROOT=${{ github.workspace }}/mkl/intelmkl.devel.win-x64.2024.0.0.49673" >> $env:GITHUB_ENV
 
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just

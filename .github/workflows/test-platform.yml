@@ -65,8 +65,9 @@ jobs:
       - name: Setup platform dependencies (Windows)
         if: inputs.os == 'windows'
         run: |
-          vcpkg install openblas:x64-windows
-          echo "OPENBLAS_PATH=C:/vcpkg/installed/x64-windows" >> $env:GITHUB_ENV
+          # Intel MKL via nuget (fast, pre-built)
+          nuget install intelmkl.devel.win-x64 -Version 2024.0.0.49673 -OutputDirectory mkl
+          echo "MKLROOT=${{ github.workspace }}/mkl/intelmkl.devel.win-x64.2024.0.0.49673" >> $env:GITHUB_ENV
 
       - name: Create venv and install dependencies
         run: uv sync --group test --extra cpu

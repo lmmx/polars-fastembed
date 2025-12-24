@@ -62,23 +62,13 @@ jobs:
         if: inputs.os == 'macos'
         run: brew install openblas
 
-      - name: Setup platform dependencies (Windows) - Conda for OpenBLAS
-        if: inputs.os == 'windows'
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-activate-base: true
-
       - name: Setup platform dependencies (Windows) - OpenBLAS
         if: inputs.os == 'windows'
         shell: pwsh
         run: |
-          conda install -c conda-forge openblas
-          $condaPrefix = "$env:CONDA\envs\test"
-          # Set environment variables for later steps
-          Add-Content -Path $env:GITHUB_ENV -Value "OPENBLAS_PATH=$condaPrefix\Library"
-          Add-Content -Path $env:GITHUB_ENV -Value "LIBRARY_PATH=$condaPrefix\Library\lib"
-          # Prepend bin folder to PATH
-          Add-Content -Path $env:GITHUB_PATH -Value "$condaPrefix\Library\bin"
+            Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
+            vcpkg install openblas:x64-windows
+            vcpkg integrate install
 
       - name: Create venv and install dependencies
         run: uv sync --group test --extra cpu

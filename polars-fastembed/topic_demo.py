@@ -50,9 +50,7 @@ register_model(model_id, providers=["CPUExecutionProvider"])
 # =============================================================================
 print("\nEmbedding documents...")
 
-df = pl.DataFrame({"text": docs}).with_columns(
-    pl.col("text").fastembed.embed(model_name=model_id).alias("embedding"),
-)
+df = pl.DataFrame({"text": docs}).fastembed.embed("text", model_name=model_id)
 
 print(f"Embedded {len(docs)} documents.\n")
 

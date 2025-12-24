@@ -1,7 +1,5 @@
-use linfa::dataset::DatasetBase;
-use linfa::traits::{Fit, Predict};
-use linfa_ica::fast_ica::{FastIca, GFunc};
 use ndarray::{Array1, Array2, Axis};
+use picard::{Picard, PicardConfig, PicardResult, DensityType};
 use polars::prelude::*;
 use pyo3::prelude::*;
 use pyo3_polars::derive::polars_expr;
@@ -23,13 +21,14 @@ fn s3_output_type(input_fields: &[Field]) -> PolarsResult<Field> {
 }
 
 // ============================================================================
-// S³ Model using linfa's FastICA
+// S³ Model using Picard ICA
 // ============================================================================
 
 pub struct S3Model {
-    pub mean: Array1<f64>,
-    pub ica_model: FastIca<f64>,
-    pub document_topics: Array2<f64>,
+    mean: Array1<f64>,
+    picard_result: PicardResult,
+    // Cache the full unmixing matrix for transforms
+    full_unmixing: Array2<f64>,
 }
 
 impl S3Model {
@@ -43,31 +42,78 @@ impl S3Model {
             );
         }
 
-        // Center the data
+        // Compute mean for later transforms
         let mean = embeddings.mean_axis(Axis(0)).unwrap();
-        let centered = &embeddings - &mean;
 
-        let centered_owned = centered.to_owned();
-        let dataset = DatasetBase::from(centered_owned.clone());
+        // Picard expects (n_features x n_samples)
+        // embeddings is (n_docs x dim), so we need (dim x n_docs)
+        // reversed_axes reinterprets layout without copying
+        let x = embeddings.reversed_axes();
 
-        let ica_model = FastIca::params()
-            .ncomponents(n_components)
-            .gfunc(GFunc::Logcosh(1.0))
-            .fit(&dataset)
-            .map_err(|e| PolarsError::ComputeError(format!("FastICA failed: {:?}", e).into()))?;
+        let config = PicardConfig::builder()
+            .n_components(n_components)
+            .max_iter(200)
+            .tol(1e-4)
+            .density(DensityType::tanh())
+            .ortho(false)
+            .random_state(0)
+            .build();
 
-        let document_topics = ica_model.predict(&centered_owned);
+        let picard_result = Picard::fit_with_config(&x, &config)
+            .map_err(|e| PolarsError::ComputeError(format!("Picard ICA failed: {e}").into()))?;
+
+        // Cache full unmixing matrix for efficient transforms
+        let full_unmixing = picard_result.full_unmixing();
 
         Ok(S3Model {
             mean,
-            ica_model,
-            document_topics,
+            picard_result,
+            full_unmixing,
         })
     }
 
-    pub fn transform(&self, embeddings: &Array2<f64>) -> Array2<f64> {
-        let centered = embeddings - &self.mean;
-        self.ica_model.predict(&centered)
+    /// Number of components (topics)
+    #[inline]
+    pub fn n_components(&self) -> usize {
+        self.picard_result.sources.nrows()
+    }
+
+    /// Get topic weights for a single document by index.
+    /// Collects into Vec to avoid lifetime issues with column view.
+    #[inline]
+    pub fn document_weights(&self, doc_idx: usize) -> Vec<f32> {
+        // sources is (n_components x n_samples), column gives weights for one doc
+        self.picard_result
+            .sources
+            .column(doc_idx)
+            .iter()
+            .map(|&w| w as f32)
+            .collect()
+    }
+
+    /// Transform new embeddings, yielding weights per sample.
+    pub fn transform_sample_weights<'a>(
+        &'a self,
+        embeddings: &'a Array2<f64>,
+    ) -> impl Iterator<Item = Vec<f32>> + 'a {
+        let n_components = self.n_components();
+
+        embeddings.rows().into_iter().map(move |sample| {
+            let mut weights = Vec::with_capacity(n_components);
+
+            for comp_idx in 0..n_components {
+                let unmixing_row = self.full_unmixing.row(comp_idx);
+                let weight: f64 = unmixing_row
+                    .iter()
+                    .zip(sample.iter())
+                    .zip(self.mean.iter())
+                    .map(|((&u, &s), &m)| u * (s - m))
+                    .sum();
+                weights.push(weight as f32);
+            }
+
+            weights
+        })
     }
 }
 
@@ -82,19 +128,17 @@ fn extract_embedding_matrix(series: &Series) -> PolarsResult<(Array2<f64>, Vec<u
         _ => polars_bail!(InvalidOperation: "Expected Array type"),
     };
 
-    let mut valid_indices: Vec<usize> = Vec::new();
-    let mut embeddings: Vec<f64> = Vec::new();
+    let n_total = arr.len();
+    let mut valid_indices = Vec::with_capacity(n_total);
+    let mut embeddings = Vec::with_capacity(n_total * dim);
 
     for (i, opt_arr) in arr.into_iter().enumerate() {
         if let Some(inner) = opt_arr {
             let f32_chunked = inner.f32()?;
-            let values: Vec<f64> = f32_chunked
-                .into_iter()
-                .map(|opt_v| opt_v.unwrap_or(0.0) as f64)
-                .collect();
 
-            if values.len() == dim {
-                embeddings.extend(values);
+            // Check if all values are present and correct length
+            if f32_chunked.len() == dim && f32_chunked.null_count() == 0 {
+                embeddings.extend(f32_chunked.into_no_null_iter().map(|v| v as f64));
                 valid_indices.push(i);
             }
         }
@@ -106,7 +150,7 @@ fn extract_embedding_matrix(series: &Series) -> PolarsResult<(Array2<f64>, Vec<u
 
     let n_docs = valid_indices.len();
     let embedding_matrix = Array2::from_shape_vec((n_docs, dim), embeddings)
-        .map_err(|e| PolarsError::ComputeError(format!("Shape error: {:?}", e).into()))?;
+        .map_err(|e| PolarsError::ComputeError(format!("Shape error: {e}").into()))?;
 
     Ok((embedding_matrix, valid_indices))
 }
@@ -119,9 +163,8 @@ fn extract_embedding_matrix(series: &Series) -> PolarsResult<(Array2<f64>, Vec<u
 pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
 
-    // Validate input is an Array type
     match s.dtype() {
-        DataType::Array(inner, _) if **inner == DataType::Float32 => {},
+        DataType::Array(inner, _) if **inner == DataType::Float32 => {}
         _ => polars_bail!(InvalidOperation:
             "s3_fit_transform requires Array[f32, n] column, got {:?}",
             s.dtype()
@@ -131,9 +174,13 @@ pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Ser
     let (embedding_matrix, valid_indices) = extract_embedding_matrix(s)?;
     let model = S3Model::fit(embedding_matrix, kwargs.n_components)?;
 
-    // Build output
+    eprintln!("Picard converged: {}, n_iter: {}, final_grad: {:.4e}",
+        model.picard_result.converged,
+        model.picard_result.n_iterations,
+        model.picard_result.gradient_norm);
+
     let total_rows = s.len();
-    let n_components = model.document_topics.ncols();
+    let n_components = model.n_components();
 
     let mut builder = ListPrimitiveChunkedBuilder::<Float32Type>::new(
         s.name().clone(),
@@ -142,17 +189,14 @@ pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Ser
         DataType::Float32,
     );
 
-    let mut doc_idx = 0;
-    for i in 0..total_rows {
-        if doc_idx < valid_indices.len() && valid_indices[doc_idx] == i {
-            let weights: Vec<f32> = model
-                .document_topics
-                .row(doc_idx)
-                .iter()
-                .map(|&x| x as f32)
-                .collect();
+    // Use a cursor into valid_indices for O(n) traversal
+    let mut valid_cursor = 0;
+
+    for row_idx in 0..total_rows {
+        if valid_cursor < valid_indices.len() && valid_indices[valid_cursor] == row_idx {
+            let weights = model.document_weights(valid_cursor);
             builder.append_slice(&weights);
-            doc_idx += 1;
+            valid_cursor += 1;
         } else {
             builder.append_null();
         }
@@ -175,31 +219,36 @@ pub fn extract_topics(
     top_n: usize,
 ) -> PyResult<Vec<Vec<(String, f32)>>> {
     let n_docs = embeddings.len();
+
     if n_docs != texts.len() {
         return Err(pyo3::exceptions::PyValueError::new_err(
-            "embeddings and texts must have same length"
+            "embeddings and texts must have same length",
         ));
     }
 
     if n_docs == 0 {
-        return Err(pyo3::exceptions::PyValueError::new_err("No documents provided"));
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "No documents provided",
+        ));
     }
 
     let dim = embeddings[0].len();
 
-    // Build embedding matrix from provided embeddings
-    let mut embedding_matrix = Array2::<f64>::zeros((n_docs, dim));
-    for (i, emb) in embeddings.iter().enumerate() {
-        for (j, &val) in emb.iter().enumerate() {
-            embedding_matrix[[i, j]] = val as f64;
-        }
-    }
+    // Build embedding matrix (n_docs x dim) directly from flat iterator
+    let flat_data: Vec<f64> = embeddings
+        .iter()
+        .flat_map(|emb| emb.iter().map(|&v| v as f64))
+        .collect();
+
+    let embedding_matrix = Array2::from_shape_vec((n_docs, dim), flat_data)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Shape error: {e}")))?;
 
     let model = S3Model::fit(embedding_matrix, n_components)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
     // Build vocabulary from texts
     let mut vocab: HashMap<String, usize> = HashMap::new();
+
     for doc in &texts {
         for word in doc.split_whitespace() {
             let clean: String = word
@@ -207,67 +256,74 @@ pub fn extract_topics(
                 .chars()
                 .filter(|c| c.is_alphanumeric())
                 .collect();
-            if clean.len() > 2 {
-                let next_idx = vocab.len();
-                vocab.entry(clean).or_insert(next_idx);
+
+            if clean.len() > 2 && !vocab.contains_key(&clean) {
+                let idx = vocab.len();
+                vocab.insert(clean, idx);
             }
         }
     }
 
-    let mut vocab_list: Vec<String> = vec![String::new(); vocab.len()];
-    for (word, &idx) in &vocab {
-        vocab_list[idx] = word.clone();
-    }
-
-    if vocab_list.is_empty() {
+    if vocab.is_empty() {
         return Ok(vec![vec![]; n_components]);
     }
 
-    // Only here do we need the embedder - for vocabulary words
+    // Build vocab list ordered by index
+    let mut vocab_list = vec![String::new(); vocab.len()];
+    for (word, &idx) in &vocab {
+        vocab_list[idx].clone_from(word);
+    }
+
+    // Embed vocabulary words
     let embedder = get_or_load_model(&model_id)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
-    let mut guard = embedder
-        .lock()
-        .map_err(|_| pyo3::exceptions::PyRuntimeError::new_err("Lock poison"))?;
+    let word_embeddings_raw = {
+        let mut guard = embedder
+            .lock()
+            .map_err(|_| pyo3::exceptions::PyRuntimeError::new_err("Lock poison"))?;
 
-    let vocab_refs: Vec<&str> = vocab_list.iter().map(|s| s.as_str()).collect();
-    let word_embeddings_raw = guard
-        .embed(vocab_refs, None)
-        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("{:?}", e)))?;
+        let vocab_refs: Vec<&str> = vocab_list.iter().map(String::as_str).collect();
 
-    drop(guard);
+        guard
+            .embed(vocab_refs, None)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("{e:?}")))?
+    };
 
-    let mut word_embeddings = Array2::<f64>::zeros((vocab_list.len(), dim));
-    for (i, emb) in word_embeddings_raw.iter().enumerate() {
-        for (j, &val) in emb.iter().enumerate() {
-            word_embeddings[[i, j]] = val as f64;
+    // Build word embeddings matrix
+    let word_flat: Vec<f64> = word_embeddings_raw
+        .iter()
+        .flat_map(|emb| emb.iter().map(|&v| v as f64))
+        .collect();
+
+    let word_embeddings = Array2::from_shape_vec((vocab_list.len(), dim), word_flat)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Shape error: {e}")))?;
+
+    // Collect word scores per topic
+    let mut topic_scores: Vec<Vec<(usize, f32)>> =
+        vec![Vec::with_capacity(vocab_list.len()); n_components];
+
+    for (word_idx, weights) in model.transform_sample_weights(&word_embeddings).enumerate() {
+        for (topic_idx, &weight) in weights.iter().enumerate() {
+            topic_scores[topic_idx].push((word_idx, weight.abs()));
         }
     }
 
-    // Project vocabulary onto topic space
-    let word_topics = model.transform(&word_embeddings);
+    // Sort and take top_n for each topic
+    let topics: Vec<Vec<(String, f32)>> = topic_scores
+        .iter_mut()
+        .map(|scores| {
+            scores.sort_unstable_by(|a, b| {
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+            });
 
-    // Extract top terms per topic
-    let mut topics = Vec::with_capacity(n_components);
-    for topic_idx in 0..n_components {
-        let mut word_scores: Vec<(usize, f32)> = word_topics
-            .column(topic_idx)
-            .iter()
-            .enumerate()
-            .map(|(i, &score)| (i, score.abs() as f32))
-            .collect();
-
-        word_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-
-        let top_terms: Vec<(String, f32)> = word_scores
-            .into_iter()
-            .take(top_n)
-            .map(|(idx, score)| (vocab_list[idx].clone(), score))
-            .collect();
-
-        topics.push(top_terms);
-    }
+            scores
+                .iter()
+                .take(top_n)
+                .map(|&(word_idx, score)| (vocab_list[word_idx].clone(), score))
+                .collect()
+        })
+        .collect();
 
     Ok(topics)
 }

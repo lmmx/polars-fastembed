@@ -190,8 +190,16 @@ jobs:
           auto-activate-base: true
 
       - name: Setup platform dependencies (Windows) - OpenBLAS
-        if: runner.os == 'windows'
-        run: conda install -c conda-forge openblas
+        if: inputs.os == 'windows'
+        shell: pwsh
+        run: |
+          conda install -c conda-forge openblas
+          $condaPrefix = "$env:CONDA\envs\test"
+          # Set environment variables for later steps
+          Add-Content -Path $env:GITHUB_ENV -Value "OPENBLAS_PATH=$condaPrefix\Library"
+          Add-Content -Path $env:GITHUB_ENV -Value "LIBRARY_PATH=$condaPrefix\Library\lib"
+          # Prepend bin folder to PATH
+          Add-Content -Path $env:GITHUB_PATH -Value "$condaPrefix\Library\bin"
 
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just

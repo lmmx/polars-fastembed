@@ -67,7 +67,7 @@ jobs:
         uses: microsoft/vcpkg-action@v7
         with:
           revision: 'master'
-      
+
       - name: Setup platform dependencies (Windows)
         if: inputs.os == 'windows'
         shell: powershell

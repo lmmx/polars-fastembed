@@ -182,13 +182,13 @@ jobs:
       - name: Install OpenBLAS (macOS)
         if: runner.os == 'macOS'
         run: brew install openblas
-    
+
       - name: Install vcpkg
         if: inputs.os == 'windows'
         uses: microsoft/vcpkg-action@v7
         with:
           revision: 'master'
-      
+
       - name: Install OpenBLAS (Windows)
         if: inputs.os == 'windows'
         shell: powershell

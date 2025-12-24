@@ -188,7 +188,7 @@ jobs:
         shell: pwsh
         run: |
             Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
-            vcpkg install openblas:x64-windows
+            vcpkg install openblas[lapack]:x64-windows
             vcpkg integrate install
 
       - name: Install just

@@ -11,6 +11,7 @@ openssl = {version = "0.10", features = ["vendored"], optional = true}
 openssl-probe = {version = "0.1", optional = true}
 ort = {version = "2.0.0-rc.5", default-features = false, optional = true}
 ndarray = "0.17"
+picard-ica = "0.1.4"
 
 [features]
 default = ["ort-dynamic"]
@@ -39,9 +40,3 @@ debug = false
 # (available in Cargo 1.68+).
 # Strips both debug info and symbol table.
 strip = "symbols"
-
-[target.'cfg(not(windows))'.dependencies]
-picard-ica = "0.1.4"
-
-[target.'cfg(windows)'.dependencies]
-picard-ica = {version = "0.1.4", default-features = false, features = ["intel-mkl"]}

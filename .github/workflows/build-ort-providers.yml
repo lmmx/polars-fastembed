@@ -185,7 +185,7 @@ jobs:
 
       - name: Install vcpkg
         if: inputs.os == 'windows'
-        uses: microsoft/vcpkg-action@v7
+        uses: johnwason/vcpkg-action@v7
         with:
           revision: 'master'
 

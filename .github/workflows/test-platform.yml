@@ -62,6 +62,21 @@ jobs:
         if: inputs.os == 'macos'
         run: brew install openblas
 
+      - name: Install vcpkg
+        if: inputs.os == 'windows'
+        uses: microsoft/vcpkg-action@v7
+        with:
+          revision: 'master'
+      
+      - name: Integrate vcpkg
+        if: inputs.os == 'windows'
+        shell: powershell
+        run: |
+          vcpkg integrate install
+          vcpkg install openblas:x64-windows-static-md
+          # echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
+
       - name: Create venv and install dependencies
         run: uv sync --group test --extra cpu
 

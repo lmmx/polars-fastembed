@@ -190,6 +190,9 @@ jobs:
             Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
             vcpkg install openblas:x64-windows lapack:x64-windows
             vcpkg integrate install
+            $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\lib"
+            Add-Content -Path $env:GITHUB_ENV -Value "LAPACK_DIR=$lib"
+            Add-Content -Path $env:GITHUB_ENV -Value "RUSTFLAGS=-L $lib"
 
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just

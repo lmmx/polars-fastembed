@@ -69,6 +69,9 @@ jobs:
             Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
             vcpkg install openblas:x64-windows lapack:x64-windows
             vcpkg integrate install
+            $lib = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\lib"
+            Add-Content -Path $env:GITHUB_ENV -Value "LAPACK_DIR=$lib"
+            Add-Content -Path $env:GITHUB_ENV -Value "RUSTFLAGS=-L $lib"
 
       - name: Create venv and install dependencies
         run: uv sync --group test --extra cpu

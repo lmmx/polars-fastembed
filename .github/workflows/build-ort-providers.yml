@@ -182,6 +182,21 @@ jobs:
       - name: Install OpenBLAS (macOS)
         if: runner.os == 'macOS'
         run: brew install openblas
+    
+      - name: Install vcpkg
+        if: inputs.os == 'windows'
+        uses: microsoft/vcpkg-action@v7
+        with:
+          revision: 'master'
+      
+      - name: Install OpenBLAS (Windows)
+        if: inputs.os == 'windows'
+        shell: powershell
+        run: |
+          vcpkg integrate install
+          vcpkg install openblas:x64-windows-static-md
+          # echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
 
       - name: Install just
         uses: taiki-e/install-action@64adfd9e935fa438859b9e080fd026720b2ba070 # tag=just

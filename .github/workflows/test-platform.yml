@@ -68,7 +68,7 @@ jobs:
         with:
           revision: 'master'
       
-      - name: Integrate vcpkg
+      - name: Setup platform dependencies (Windows)
         if: inputs.os == 'windows'
         shell: powershell
         run: |

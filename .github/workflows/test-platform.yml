@@ -65,7 +65,7 @@ jobs:
       - name: Setup platform dependencies (Windows)
         uses: lukka/get-cmake@latest
         if: inputs.os == 'windows'
-        
+
       - name: Install vcpkg
         if: inputs.os == 'windows'
         uses: lukka/run-vcpkg@v11

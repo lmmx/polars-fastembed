@@ -67,7 +67,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: true
-      
+
       - name: Setup platform dependencies (Windows) - OpenBLAS
         if: inputs.os == 'windows'
         run: conda install -c conda-forge openblas

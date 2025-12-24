@@ -62,24 +62,15 @@ jobs:
         if: inputs.os == 'macos'
         run: brew install openblas
 
-      - name: Setup platform dependencies (Windows)
-        uses: lukka/get-cmake@latest
+      - name: Setup platform dependencies (Windows) - Conda for OpenBLAS
         if: inputs.os == 'windows'
-
-      - name: Install vcpkg
-        if: inputs.os == 'windows'
-        uses: lukka/run-vcpkg@v11
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          vcpkgGitCommitId: 'b3dd708d38df5c856fe1c18dc0d59ab771f93921'
-
-      - name: Setup platform dependencies (Windows)
+          auto-activate-base: true
+      
+      - name: Setup platform dependencies (Windows) - OpenBLAS
         if: inputs.os == 'windows'
-        shell: powershell
-        run: |
-          vcpkg integrate install
-          vcpkg install openblas:x64-windows-static-md
-          # echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
-          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT"
+        run: conda install -c conda-forge openblas
 
       - name: Create venv and install dependencies
         run: uv sync --group test --extra cpu

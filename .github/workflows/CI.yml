@@ -127,7 +127,7 @@ jobs:
             before: |
               sudo apt-get update -y && \
               sudo apt-get install pkg-config libssl-dev libopenblas-dev -y
-            dockeropts: --env OPENSSL_DIR=/usr
+            dockeropts: "" # --env OPENSSL_DIR=/usr
             skip: false
             features: "--features openssl-vendored"
             manylinux: 2_28

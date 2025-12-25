@@ -125,6 +125,7 @@ jobs:
           - runner: ubuntu-22.04
             target: aarch64
             before: |
+              sudo dpkg --add-architecture arm64 && \
               sudo apt-get update -y && \
               sudo apt-get install pkg-config libssl-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libopenblas-dev:arm64 -y
             dockeropts: >

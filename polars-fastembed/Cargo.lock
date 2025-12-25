@@ -2056,9 +2056,9 @@ dependencies = [
 
 [[package]]
 name = "picard-ica"
-version = "0.1.4"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64e263a0ed2f6310cdc5d9bdc7f7d61f05e6ccf3a9649389f1b4fcea0a1453d2"
+checksum = "badf0e78a74fd5df5de375be3a26756edd42a5afbe78e0b2585d8a05d0a47651"
 dependencies = [
  "ndarray 0.17.1",
  "ndarray-linalg",

@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import polars as pl
 from polars.api import register_dataframe_namespace
@@ -46,7 +47,71 @@ __all__ = [
     "register_model",
     "clear_registry",
     "list_models",
+    "S3Config",
 ]
+
+DensityType = Literal["tanh", "exp", "cube"]
+
+
+@dataclass
+class S3Config:
+    """Configuration for S³ (Semantic Signal Separation) topic modeling.
+
+    This controls the Picard ICA algorithm used for blind source separation.
+
+    Attributes:
+        n_components: Number of topics to extract.
+        max_iter: Maximum iterations for Picard optimization.
+        tol: Convergence tolerance for gradient norm.
+        density: Density function - "tanh" (default, super-Gaussian),
+            "exp" (heavy tails), or "cube" (sub-Gaussian).
+        density_alpha: Scaling parameter for tanh/exp density (default: 1.0).
+        ortho: Use orthogonal constraint (Picard-O). Faster but more restrictive.
+        extended: Use extended algorithm for mixed sub/super-Gaussian sources.
+            Defaults to same as `ortho` if not specified.
+        fastica_it: Number of FastICA warm-up iterations before Picard.
+        jade_it: Number of JADE warm-up iterations before Picard.
+            Cannot be used together with fastica_it.
+        m: L-BFGS memory size.
+        ls_tries: Maximum line search attempts.
+        lambda_min: Minimum eigenvalue for Hessian regularization.
+        random_state: Random seed for reproducibility.
+        verbose: Print progress information.
+    """
+
+    n_components: int = 10
+    max_iter: int = 200
+    tol: float = 1e-4
+    density: DensityType = "tanh"
+    density_alpha: float | None = None
+    ortho: bool = False
+    extended: bool | None = None
+    fastica_it: int | None = None
+    jade_it: int | None = None
+    m: int = 7
+    ls_tries: int = 10
+    lambda_min: float = 0.01
+    random_state: int | None = None
+    verbose: bool = False
+
+    def to_kwargs(self) -> dict:
+        """Convert to kwargs dict for Rust functions."""
+        return {
+            "n_components": self.n_components,
+            "max_iter": self.max_iter,
+            "tol": self.tol,
+            "density": self.density,
+            "density_alpha": self.density_alpha,
+            "ortho": self.ortho,
+            "extended": self.extended,
+            "fastica_it": self.fastica_it,
+            "jade_it": self.jade_it,
+            "m": self.m,
+            "ls_tries": self.ls_tries,
+            "lambda_min": self.lambda_min,
+            "random_state": self.random_state,
+            "verbose": self.verbose,
+        }
 
 
 def register_model(model_name: str, providers: list[str] | None = None) -> None:
@@ -85,16 +150,28 @@ def embed_text(expr: IntoExpr, *, model_id: str | None = None) -> pl.Expr:
 def s3_fit_transform(
     expr: IntoExpr,
     *,
-    n_components: int = 10,
+    config: S3Config | None = None,
+    **kwargs,
 ) -> pl.Expr:
     """
     Fit S³ (Semantic Signal Separation) on an embedding column and return document-topic weights.
 
     Args:
         expr: An embedding column (Array[f32, n])
-        n_components: Number of topics to extract
+        config: S3Config object with all parameters, or pass individual kwargs.
+        **kwargs: Individual parameters (override config if both provided).
+            See S3Config for available options.
     """
-    return plug(expr, n_components=n_components)
+    if config is not None:
+        merged = config.to_kwargs()
+        merged.update(kwargs)
+    else:
+        # Apply defaults from S3Config
+        defaults = S3Config().to_kwargs()
+        defaults.update(kwargs)
+        merged = defaults
+
+    return plug(expr, **merged)
 
 
 # =============================================================================
@@ -181,7 +258,8 @@ class FastEmbedPlugin:
     def s3_topics(
         self,
         embedding_column: str = "embedding",
-        n_components: int = 10,
+        config: S3Config | None = None,
+        **kwargs,
     ) -> pl.DataFrame:
         """
         Extract topics using S³ (Semantic Signal Separation) from existing embeddings.
@@ -192,7 +270,9 @@ class FastEmbedPlugin:
 
         Args:
             embedding_column: Column containing pre-computed embeddings (Array[f32, n])
-            n_components: Number of topics to extract
+            config: S3Config object with Picard ICA parameters.
+            **kwargs: Individual parameters (see S3Config). Override config if both provided.
+                Common options: n_components, max_iter, tol, density, fastica_it, random_state.
 
         Returns:
             DataFrame with topic_weights and dominant_topic columns
@@ -203,7 +283,8 @@ class FastEmbedPlugin:
         return self._df.with_columns(
             s3_fit_transform(
                 embedding_column,
-                n_components=n_components,
+                config=config,
+                **kwargs,
             ).alias("topic_weights"),
         ).with_columns(
             pl.col("topic_weights")
@@ -216,9 +297,10 @@ class FastEmbedPlugin:
         self,
         embedding_column: str = "embedding",
         text_column: str | None = None,
-        n_components: int = 10,
         model_name: str | None = None,
         top_n: int = 10,
+        config: S3Config | None = None,
+        **kwargs,
     ) -> list[list[tuple[str, float]]]:
         """
         Extract topic descriptions (top terms per topic) from existing embeddings.
@@ -226,9 +308,10 @@ class FastEmbedPlugin:
         Args:
             embedding_column: Column containing pre-computed embeddings (Array[f32, n])
             text_column: Column containing text (for vocabulary extraction)
-            n_components: Number of topics to extract
             model_name: Embedding model ID (needed to embed vocabulary words)
             top_n: Number of top terms per topic
+            config: S3Config object with Picard ICA parameters.
+            **kwargs: Individual parameters (see S3Config). Override config if both provided.
 
         Returns:
             List of topics, each topic is a list of (term, importance) tuples
@@ -242,8 +325,35 @@ class FastEmbedPlugin:
         if text_column not in self._df.columns:
             raise ValueError(f"Column '{text_column}' not found in DataFrame.")
 
+        # Merge config with kwargs
+        if config is not None:
+            params = config.to_kwargs()
+            params.update(kwargs)
+        else:
+            params = S3Config().to_kwargs()
+            params.update(kwargs)
+
         # Get embeddings as list of lists
         embeddings = self._df[embedding_column].drop_nulls().to_list()
         texts = self._df[text_column].drop_nulls().to_list()
 
-        return _extract_topics(embeddings, texts, n_components, model_name, top_n)
+        return _extract_topics(
+            embeddings=embeddings,
+            texts=texts,
+            n_components=params["n_components"],
+            model_id=model_name,
+            top_n=top_n,
+            max_iter=params["max_iter"],
+            tol=params["tol"],
+            density=params["density"],
+            density_alpha=params["density_alpha"],
+            ortho=params["ortho"],
+            extended=params["extended"],
+            fastica_it=params["fastica_it"],
+            jade_it=params["jade_it"],
+            m=params["m"],
+            ls_tries=params["ls_tries"],
+            lambda_min=params["lambda_min"],
+            random_state=params["random_state"],
+            verbose=params["verbose"],
+        )

@@ -63,6 +63,7 @@ jobs:
             before: |
               yum install \
                 openssl-devel.i686 \
+                openblas-devel.i686 \
                 pkg-config \
                 glibc-devel.i686 \
                 libstdc++-devel.i686 \
@@ -125,7 +126,7 @@ jobs:
             target: aarch64
             before: |
               sudo apt-get update -y && \
-              sudo apt-get install pkg-config libssl-dev -y
+              sudo apt-get install pkg-config libssl-dev libopenblas-dev -y
             dockeropts: --env OPENSSL_DIR=/usr
             skip: false
             features: "--features openssl-vendored"
@@ -411,6 +412,8 @@ jobs:
             features: ""
     steps:
       - uses: actions/checkout@v6
+      - name: Install OpenBLAS
+        run: brew install openblas
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x

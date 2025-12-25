@@ -26,20 +26,20 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
-    if: >
-      (
-        (
-          (github.event_name == 'push')
-          || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx')
-        )
-        &&
-        (
-          startsWith(github.event.head_commit.message, 'chore(release)') ||
-          contains(github.event.head_commit.message, 'cibuildwheel')
-        )
-      )
-      || (github.event_name == 'workflow_dispatch')
-      || (github.event_name == 'workflow_run')
+    # if: >
+    #   (
+    #     (
+    #       (github.event_name == 'push')
+    #       || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx')
+    #     )
+    #     &&
+    #     (
+    #       startsWith(github.event.head_commit.message, 'chore(release)') ||
+    #       contains(github.event.head_commit.message, 'cibuildwheel')
+    #     )
+    #   )
+    #   || (github.event_name == 'workflow_dispatch')
+    #   || (github.event_name == 'workflow_run')
     steps:
       - name: Confirm commit message matched
         run: echo "Commit message matched the condition."

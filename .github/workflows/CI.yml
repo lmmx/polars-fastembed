@@ -125,8 +125,9 @@ jobs:
           - runner: ubuntu-22.04
             target: aarch64
             before: |
+              sudo dpkg --add-architecture arm64 && \
               sudo apt-get update -y && \
-              sudo apt-get install pkg-config libssl-dev libopenblas-dev -y
+              sudo apt-get install -y pkg-config libssl-dev libopenblas-dev:arm64 crossbuild-essential-arm64
             dockeropts: "" # --env OPENSSL_DIR=/usr
             skip: false
             features: "--features openssl-vendored"

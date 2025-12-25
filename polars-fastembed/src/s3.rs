@@ -8,9 +8,126 @@ use std::collections::HashMap;
 
 use crate::registry::get_or_load_model;
 
-#[derive(Deserialize)]
+/// Density function type for ICA.
+#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum S3Density {
+    #[default]
+    Tanh,
+    Exp,
+    Cube,
+}
+
+impl S3Density {
+    fn to_picard(self, alpha: Option<f64>) -> DensityType {
+        match self {
+            S3Density::Tanh => match alpha {
+                Some(a) => DensityType::tanh_with_alpha(a),
+                None => DensityType::tanh(),
+            },
+            S3Density::Exp => match alpha {
+                Some(a) => DensityType::exp_with_alpha(a),
+                None => DensityType::exp(),
+            },
+            S3Density::Cube => DensityType::cube(),
+        }
+    }
+}
+
+/// Configuration for S³ topic modeling.
+#[derive(Debug, Clone, Deserialize)]
 pub struct S3Kwargs {
+    /// Number of topics to extract.
     pub n_components: usize,
+
+    /// Maximum iterations for Picard optimization.
+    #[serde(default = "default_max_iter")]
+    pub max_iter: usize,
+
+    /// Convergence tolerance for gradient norm.
+    #[serde(default = "default_tol")]
+    pub tol: f64,
+
+    /// Density function: "tanh", "exp", or "cube".
+    #[serde(default)]
+    pub density: S3Density,
+
+    /// Alpha parameter for tanh/exp density functions.
+    #[serde(default)]
+    pub density_alpha: Option<f64>,
+
+    /// Use orthogonal constraint (Picard-O).
+    #[serde(default = "default_false")]
+    pub ortho: bool,
+
+    /// Use extended algorithm for mixed sub/super-Gaussian sources.
+    #[serde(default)]
+    pub extended: Option<bool>,
+
+    /// Number of FastICA warm-up iterations.
+    #[serde(default)]
+    pub fastica_it: Option<usize>,
+
+    /// Number of JADE warm-up iterations.
+    #[serde(default)]
+    pub jade_it: Option<usize>,
+
+    /// L-BFGS memory size.
+    #[serde(default = "default_m")]
+    pub m: usize,
+
+    /// Maximum line search attempts.
+    #[serde(default = "default_ls_tries")]
+    pub ls_tries: usize,
+
+    /// Minimum eigenvalue for Hessian regularization.
+    #[serde(default = "default_lambda_min")]
+    pub lambda_min: f64,
+
+    /// Random seed for reproducibility.
+    #[serde(default)]
+    pub random_state: Option<u64>,
+
+    /// Print progress information.
+    #[serde(default = "default_false")]
+    pub verbose: bool,
+}
+
+fn default_max_iter() -> usize { 200 }
+fn default_tol() -> f64 { 1e-4 }
+fn default_m() -> usize { 7 }
+fn default_ls_tries() -> usize { 10 }
+fn default_lambda_min() -> f64 { 0.01 }
+fn default_false() -> bool { false }
+
+impl S3Kwargs {
+    fn to_picard_config(&self) -> PicardConfig {
+        let mut builder = PicardConfig::builder()
+            .n_components(self.n_components)
+            .max_iter(self.max_iter)
+            .tol(self.tol)
+            .density(self.density.to_picard(self.density_alpha))
+            .ortho(self.ortho)
+            .m(self.m)
+            .ls_tries(self.ls_tries)
+            .lambda_min(self.lambda_min)
+            .verbose(self.verbose);
+
+        if let Some(ext) = self.extended {
+            builder = builder.extended(ext);
+        }
+        if let Some(it) = self.fastica_it {
+            builder = builder.fastica_it(it);
+        }
+        if let Some(it) = self.jade_it {
+            builder = builder.jade_it(it);
+        }
+        if let Some(seed) = self.random_state {
+            builder = builder.random_state(seed);
+        }
+
+        builder.build()
+    }
 }
 
 fn s3_output_type(input_fields: &[Field]) -> PolarsResult<Field> {
@@ -32,13 +149,13 @@ pub struct S3Model {
 }
 
 impl S3Model {
-    pub fn fit(embeddings: Array2<f64>, n_components: usize) -> PolarsResult<Self> {
+    pub fn fit(embeddings: Array2<f64>, kwargs: &S3Kwargs) -> PolarsResult<Self> {
         let (n_docs, _dim) = embeddings.dim();
 
-        if n_docs <= n_components {
+        if n_docs <= kwargs.n_components {
             polars_bail!(ComputeError:
                 "Need more than {} documents for {} components, got {}",
-                n_components, n_components, n_docs
+                kwargs.n_components, kwargs.n_components, n_docs
             );
         }
 
@@ -50,14 +167,7 @@ impl S3Model {
         // reversed_axes reinterprets layout without copying
         let x = embeddings.reversed_axes();
 
-        let config = PicardConfig::builder()
-            .n_components(n_components)
-            .max_iter(200)
-            .tol(1e-4)
-            .density(DensityType::tanh())
-            .ortho(false)
-            .random_state(0)
-            .build();
+        let config = kwargs.to_picard_config();
 
         let picard_result = Picard::fit_with_config(&x, &config)
             .map_err(|e| PolarsError::ComputeError(format!("Picard ICA failed: {e}").into()))?;
@@ -172,12 +282,16 @@ pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Ser
     }
 
     let (embedding_matrix, valid_indices) = extract_embedding_matrix(s)?;
-    let model = S3Model::fit(embedding_matrix, kwargs.n_components)?;
+    let model = S3Model::fit(embedding_matrix, &kwargs)?;
 
-    eprintln!("Picard converged: {}, n_iter: {}, final_grad: {:.4e}",
-        model.picard_result.converged,
-        model.picard_result.n_iterations,
-        model.picard_result.gradient_norm);
+    if kwargs.verbose {
+        eprintln!(
+            "Picard converged: {}, n_iter: {}, final_grad: {:.4e}",
+            model.picard_result.converged,
+            model.picard_result.n_iterations,
+            model.picard_result.gradient_norm
+        );
+    }
 
     let total_rows = s.len();
     let n_components = model.n_components();
@@ -210,13 +324,48 @@ pub fn s3_fit_transform(inputs: &[Series], kwargs: S3Kwargs) -> PolarsResult<Ser
 // ============================================================================
 
 #[pyfunction]
-#[pyo3(signature = (embeddings, texts, n_components, model_id=None, top_n=10))]
+#[pyo3(signature = (
+    embeddings,
+    texts,
+    n_components,
+    model_id = None,
+    top_n = 10,
+    *,
+    max_iter = 200,
+    tol = 1e-4,
+    density = "tanh",
+    density_alpha = None,
+    ortho = false,
+    extended = None,
+    fastica_it = None,
+    jade_it = None,
+    m = 7,
+    ls_tries = 10,
+    lambda_min = 0.01,
+    random_state = None,
+    verbose = false,
+))]
+#[allow(clippy::too_many_arguments)]
 pub fn extract_topics(
     embeddings: Vec<Vec<f32>>,
     texts: Vec<String>,
     n_components: usize,
     model_id: Option<String>,
     top_n: usize,
+    // Picard configuration
+    max_iter: usize,
+    tol: f64,
+    density: &str,
+    density_alpha: Option<f64>,
+    ortho: bool,
+    extended: Option<bool>,
+    fastica_it: Option<usize>,
+    jade_it: Option<usize>,
+    m: usize,
+    ls_tries: usize,
+    lambda_min: f64,
+    random_state: Option<u64>,
+    verbose: bool,
 ) -> PyResult<Vec<Vec<(String, f32)>>> {
     let n_docs = embeddings.len();
 
@@ -232,6 +381,36 @@ pub fn extract_topics(
         ));
     }
 
+    // Parse density string
+    let density_enum = match density.to_lowercase().as_str() {
+        "tanh" => S3Density::Tanh,
+        "exp" => S3Density::Exp,
+        "cube" => S3Density::Cube,
+        _ => {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "Unknown density '{}'. Use 'tanh', 'exp', or 'cube'.",
+                density
+            )))
+        }
+    };
+
+    let kwargs = S3Kwargs {
+        n_components,
+        max_iter,
+        tol,
+        density: density_enum,
+        density_alpha,
+        ortho,
+        extended,
+        fastica_it,
+        jade_it,
+        m,
+        ls_tries,
+        lambda_min,
+        random_state,
+        verbose,
+    };
+
     let dim = embeddings[0].len();
 
     // Build embedding matrix (n_docs x dim) directly from flat iterator
@@ -243,7 +422,7 @@ pub fn extract_topics(
     let embedding_matrix = Array2::from_shape_vec((n_docs, dim), flat_data)
         .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Shape error: {e}")))?;
 
-    let model = S3Model::fit(embedding_matrix, n_components)
+    let model = S3Model::fit(embedding_matrix, &kwargs)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
 
     // Build vocabulary from texts

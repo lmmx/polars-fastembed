@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock, Mutex};
 
 #[cfg(feature = "ort-dynamic")]
 use ort::execution_providers::{ExecutionProviderDispatch, CPUExecutionProvider, CUDAExecutionProvider};
+#[cfg(feature = "ort-dynamic")]
 use ort::execution_providers::ExecutionProvider;
 use fastembed::{InitOptions, TextEmbedding};
 use once_cell::sync::Lazy;
@@ -13,23 +14,7 @@ use crate::model_suggestions::from_model_code;
 
 #[cfg(feature = "ort-dynamic")]
 fn default_providers() -> Vec<ExecutionProviderDispatch> {
-    let cuda = CUDAExecutionProvider::default();
-    eprintln!("CUDA is_available: {:?}", cuda.is_available());
-
-    match ort::session::Session::builder() {
-        Ok(mut builder) => {
-            match cuda.register(&mut builder) {
-                Ok(_) => eprintln!("CUDA provider registered successfully"),
-                Err(e) => eprintln!("CUDA provider registration FAILED: {:?}", e),
-            }
-        }
-        Err(e) => eprintln!("Session builder failed: {:?}", e),
-    }
-
-    vec![
-        cuda.into(),
-        CPUExecutionProvider::default().into(),
-    ]
+    vec![CPUExecutionProvider::default().into()]
 }
 
 #[cfg(not(feature = "ort-dynamic"))]
@@ -77,8 +62,27 @@ fn parse_providers(provider_names: &[String]) -> Result<Vec<ExecutionProviderDis
     for provider_str in provider_names {
         let dispatch: ExecutionProviderDispatch = match provider_str.as_str() {
             "CPUExecutionProvider" => CPUExecutionProvider::default().into(),
-            "CUDAExecutionProvider" => CUDAExecutionProvider::default().into(),
-            // Add more as needed...
+            "CUDAExecutionProvider" => {
+                let cuda = CUDAExecutionProvider::default();
+                match cuda.is_available() {
+                    Ok(true) => {
+                        // Pre-register with session builder to ensure CUDA is actually used
+                        if let Ok(mut builder) = ort::session::Session::builder() {
+                            let _ = cuda.register(&mut builder);
+                        }
+                        cuda.into()
+                    }
+                    Ok(false) => {
+                        return Err(
+                            "CUDA provider requested but not available. \
+                             Check CUDA installation and drivers.".into()
+                        );
+                    }
+                    Err(e) => {
+                        return Err(format!("Failed to check CUDA availability: {}", e));
+                    }
+                }
+            }
             other => {
                 return Err(format!(
                     "Unrecognized execution provider '{other}'. \

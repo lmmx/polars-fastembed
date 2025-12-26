@@ -1,4 +1,5 @@
 import polars as pl
+import polars_fastembed  # noqa: F401
 
 # Create a sample DataFrame
 df = pl.DataFrame(

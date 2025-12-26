@@ -26,7 +26,7 @@ def test_embeddings_match_reference():
     reference_embeddings = np.array(data["embeddings"])
 
     # Generate embeddings with polars-fastembed
-    register_model("Xenova/bge-small-en-v1.5", providers=["CPUExecutionProvider"])
+    register_model("Xenova/bge-small-en-v1.5")
     df = pl.DataFrame({"text": documents})
     result_df = df.with_columns(embed_text("text").alias("embeddings"))
     your_embeddings = np.array(result_df["embeddings"].to_list())

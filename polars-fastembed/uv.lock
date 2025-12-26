@@ -336,7 +336,7 @@ wheels = [
 
 [[package]]
 name = "polars-fastembed"
-version = "0.1.5"
+version = "0.1.15"
 source = { editable = "." }
 dependencies = [
     { name = "polars" },
@@ -344,6 +344,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+cpu = [
+    { name = "polars-fastembed-cpu" },
+]
+cuda = [
+    { name = "polars-fastembed-cuda" },
+]
 polars-lts-cpu = [
     { name = "polars", extra = ["rtcompat"] },
 ]
@@ -365,8 +371,10 @@ requires-dist = [
     { name = "polars", specifier = ">=1.36.0" },
     { name = "polars", extras = ["rtcompat"], marker = "extra == 'polars-lts-cpu'" },
     { name = "polars-distance", specifier = ">=0.5.3" },
+    { name = "polars-fastembed-cpu", marker = "extra == 'cpu'", specifier = ">=0.1.14" },
+    { name = "polars-fastembed-cuda", marker = "extra == 'cuda'", specifier = ">=0.1.14" },
 ]
-provides-extras = ["polars-lts-cpu"]
+provides-extras = ["cpu", "cuda", "polars-lts-cpu"]
 
 [package.metadata.requires-dev]
 build = [
@@ -377,6 +385,26 @@ test = [
     { name = "inline-snapshot", specifier = ">=0.31.1" },
     { name = "numpy", specifier = ">=2.0.2" },
     { name = "pytest", specifier = ">=8.4.1" },
+]
+
+[[package]]
+name = "polars-fastembed-cpu"
+version = "0.1.16"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/48/8962483ef38e63e8e7d8edb8bc5871ca1a09be9e96b62b431a5299cb0a25/polars_fastembed_cpu-0.1.16-py3-none-macosx_14_0_arm64.whl", hash = "sha256:9b237da2fe1a033470555b5dac81352d123534253da8955e67b20af6cd90d2af", size = 20202054, upload-time = "2025-12-26T15:39:11.456Z" },
+    { url = "https://files.pythonhosted.org/packages/16/cb/437d2850b5ef0cec37d148ae457fb5e4a178acba51097cf9e493b9ac78ae/polars_fastembed_cpu-0.1.16-py3-none-macosx_14_0_x86_64.whl", hash = "sha256:b635406022aa18d1d355436bcc6e5a97c72e8e7ed39867d5de56fd57a07fd249", size = 23264863, upload-time = "2025-12-26T15:39:14.109Z" },
+    { url = "https://files.pythonhosted.org/packages/13/73/ff6999728049b428880c91b03c2e2e6c8c293b4994ea15256dc18e37279b/polars_fastembed_cpu-0.1.16-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:1c1eb8df7bf64a023e46812dc6185749f06f8f40f60a2519a24d4b8975204f62", size = 21883983, upload-time = "2025-12-26T15:39:16.278Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/d8/10b6864c118f3a78a60ced8c2d70036a093d0277fb98ee8d88e2a92f08cd/polars_fastembed_cpu-0.1.16-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:c1001d0c6e7fbfa6b492a6acc7e60fe0743942c3c058f519de89ab2dd2752807", size = 24889247, upload-time = "2025-12-26T15:39:18.665Z" },
+    { url = "https://files.pythonhosted.org/packages/17/1b/c687cb8f2e57151df22e3c33b03c73edfe75c86d2c6565945a2f5360283a/polars_fastembed_cpu-0.1.16-py3-none-win_amd64.whl", hash = "sha256:ed8c13bb92b246aa45c4255665473439fb8d0f3e459d62e86011e57fd8f7892a", size = 5511495, upload-time = "2025-12-26T15:39:20.809Z" },
+]
+
+[[package]]
+name = "polars-fastembed-cuda"
+version = "0.1.16"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/80/1b/0b68b8b55daa33bfe3b5145920ca052ceadd06fddf317d74f479a5eb7364/polars_fastembed_cuda-0.1.16-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:6a133757f7fcffe0b916b00a75e46b46572aaad3ebf51023def20e55f9ce649c", size = 40270392, upload-time = "2025-12-26T15:39:22.666Z" },
 ]
 
 [[package]]

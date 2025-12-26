@@ -4,13 +4,19 @@ import os
 from pathlib import Path
 
 
-def _find_ort_library() -> Path | None:
+def _detect_providers() -> tuple[bool, bool, Path | None]:
+    """Detect available providers and return (cuda, cpu, lib_path)."""
+    cuda_available = False
+    cpu_available = False
+    lib_path = None
+
     try:
         from polars_fastembed_cuda import get_ort_lib_path
 
         path = get_ort_lib_path()
         if path and path.exists():
-            return path
+            cuda_available = True
+            lib_path = path
     except ImportError:
         pass
 
@@ -19,20 +25,24 @@ def _find_ort_library() -> Path | None:
 
         path = get_ort_lib_path()
         if path and path.exists():
-            return path
+            cpu_available = True
+            if lib_path is None:
+                lib_path = path
     except ImportError:
         pass
 
-    return None
+    return cuda_available, cpu_available, lib_path
+
+
+# Run detection at import time
+_CUDA_AVAILABLE, _CPU_AVAILABLE, _ORT_LIB_PATH = _detect_providers()
 
 
 def configure_ort() -> None:
     if "ORT_DYLIB_PATH" in os.environ:
         return
 
-    ort_lib = _find_ort_library()
-
-    if ort_lib is None:
+    if _ORT_LIB_PATH is None:
         raise ImportError(
             "No ONNX Runtime provider found.\n\n"
             "Install one of:\n"
@@ -40,7 +50,7 @@ def configure_ort() -> None:
             "  pip install polars-fastembed[cuda]\n",
         )
 
-    os.environ["ORT_DYLIB_PATH"] = str(ort_lib)
-    libs_dir = str(ort_lib.parent)
+    os.environ["ORT_DYLIB_PATH"] = str(_ORT_LIB_PATH)
+    libs_dir = str(_ORT_LIB_PATH.parent)
     existing = os.environ.get("LD_LIBRARY_PATH", "")
     os.environ["LD_LIBRARY_PATH"] = f"{libs_dir}:{existing}" if existing else libs_dir

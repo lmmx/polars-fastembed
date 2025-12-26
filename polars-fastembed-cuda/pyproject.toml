@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "polars-fastembed-cuda"
-version = "0.1.15"
+version = "0.1.16"
 description = "CUDA ONNX Runtime provider for polars-fastembed"
 readme = "README.md"
 authors = [{name = "Louis Maddox", email = "louismmx@gmail.com"}]

@@ -8,8 +8,9 @@ This repository contains the Rust implementation of **polars-fastembed**, a Pola
 
 ## Performance Notes
 
-- Benchmarking shows `Xenova/all-MiniLM-L6-v2` is the fastest, ~8ms per 1k tokens, or ~5ms/1k tok with GPU
-- No batching or explicit parallelism is used in the Rust embedding code
+- Benchmarking shows `Xenova/all-MiniLM-L6-v2` is the fastest on CPU, ~8ms per 1k tokens.
+  - This is the default model.
+- With GPU, `SnowflakeArcticEmbedXS` can achieve ~5ms/1k tok (on both GPU and CPU executors)
 
 ### Embed
 
@@ -21,8 +22,8 @@ bash benchmark_embed.sh
 
 ```py
 Benchmark 1: embed
-  Time (mean ± σ):     591.9 ms ±  15.5 ms    [User: 1779.2 ms, System: 171.1 ms]
-  Range (min … max):   573.2 ms … 615.1 ms    10 runs
+  Time (mean ± σ):     692.4 ms ±   4.1 ms    [User: 3526.8 ms, System: 1352.2 ms]
+  Range (min … max):   685.4 ms … 696.9 ms    10 runs
 ```
 
 ### Embed + Retrieve
@@ -35,19 +36,22 @@ bash benchmark_embed_and_retrieve.sh
 
 ```py
 Benchmark 1: embed-and-retrieve
-  Time (mean ± σ):     888.8 ms ±  29.6 ms    [User: 4508.7 ms, System: 253.6 ms]
-  Range (min … max):   854.5 ms … 946.9 ms    10 runs
+  Time (mean ± σ):     771.6 ms ±  23.6 ms    [User: 4817.7 ms, System: 1314.2 ms]
+  Range (min … max):   725.1 ms … 795.2 ms    10 runs
 ````
 
 ### Larger embedding
 
-To embed all Python PEPs and retrieve a query, polars-fastembed takes about a minute
+To embed all 708 Python PEPs and retrieve a query "Typed dictionaries and mappings", polars-fastembed takes ~24s (~5s on GPU)
 
 - Run with `time just bench`
 
 ```
 uv run --frozen benchmark
-Using model: Xenova/all-MiniLM-L6-v2
+Model 'SnowflakeArcticEmbedXS' loaded successfully
+CUDA is_available: Ok(true)
+CUDA provider registered successfully
+Using model: SnowflakeArcticEmbedXS
 Embedded 708 documents.
 Top 5 retrieval results:
 shape: (5, 4)
@@ -56,17 +60,17 @@ shape: (5, 4)
 │ --- ┆ ---                    ┆ ---                             ┆ ---        │
 │ i64 ┆ str                    ┆ array[f32, 384]                 ┆ f32        │
 ╞═════╪════════════════════════╪═════════════════════════════════╪════════════╡
-│ 589 ┆ PEP: 589               ┆ [-0.007806, 0.044277, … 0.0958… ┆ 0.520573   │
-│     ┆ Title: TypedDict: Typ… ┆                                 ┆            │
-│ 455 ┆ PEP: 455               ┆ [-0.112585, 0.064582, … 0.0891… ┆ 0.509375   │
-│     ┆ Title: Adding a key-t… ┆                                 ┆            │
-│ 705 ┆ PEP: 705               ┆ [-0.007666, -0.005967, … 0.118… ┆ 0.501325   │
+│ 705 ┆ PEP: 705               ┆ [-0.008636, 0.071007, … 0.0072… ┆ 0.80542    │
 │     ┆ Title: TypedDict: Rea… ┆                                 ┆            │
-│ 764 ┆ PEP: 764               ┆ [-0.038508, 0.046109, … 0.0555… ┆ 0.491672   │
-│     ┆ Title: Inline typed d… ┆                                 ┆            │
-│ 814 ┆ PEP: 814               ┆ [-0.114546, 0.023868, … 0.0395… ┆ 0.486509   │
-│     ┆ Title: Add frozendict… ┆                                 ┆            │
+│ 589 ┆ PEP: 589               ┆ [-0.001627, 0.088968, … 0.0314… ┆ 0.800909   │
+│     ┆ Title: TypedDict: Typ… ┆                                 ┆            │
+│ 692 ┆ PEP: 692               ┆ [-0.024454, 0.049467, … 0.0257… ┆ 0.792025   │
+│     ┆ Title: Using TypedDic… ┆                                 ┆            │
+│ 649 ┆ PEP: 649               ┆ [0.014099, 0.06436, … -0.04776… ┆ 0.779885   │
+│     ┆ Title: Deferred Evalu… ┆                                 ┆            │
+│ 681 ┆ PEP: 681               ┆ [-0.026525, 0.074915, … 0.0083… ┆ 0.777705   │
+│     ┆ Title: Data Class Tra… ┆                                 ┆            │
 └─────┴────────────────────────┴─────────────────────────────────┴────────────┘
-```
 
-- Embedding all 708 Python PEPs and retrieval on query "Typed dictionaries and mappings" takes 30s
+real    0m5.527s
+```

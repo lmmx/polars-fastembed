@@ -1,5 +1,4 @@
 import polars as pl
-from polars_fastembed import register_model
 
 # Create a sample DataFrame
 df = pl.DataFrame(
@@ -13,12 +12,12 @@ df = pl.DataFrame(
     },
 )
 
-model_id = "Xenova/bge-small-en-v1.5"
+model_id = "Xenova/all-MiniLM-L6-v2"
 
-# 1) Register a model
-#    Optionally specify GPU: providers=["CUDAExecutionProvider"]
-#    Or omit it for CPU usage
-register_model(model_id, providers=["CPUExecutionProvider"])
+# # 1) Register a model
+# #    Optionally specify GPU: providers=["CUDAExecutionProvider"]
+# #    Or omit it for CPU usage
+# register_model(model_id, providers=["CPUExecutionProvider"])
 
 # 2) Embed your text
 df_emb = df.fastembed.embed(

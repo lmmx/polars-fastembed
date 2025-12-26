@@ -20,7 +20,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-  "polars-fastembed>=0.1.8"
+  "polars-fastembed[cuda]>=0.1.15"
 ]
 
 [project.scripts]

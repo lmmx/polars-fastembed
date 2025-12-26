@@ -7,7 +7,7 @@ name = "benchmark"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "polars-fastembed" },
+    { name = "polars-fastembed", extra = ["cuda"] },
 ]
 
 [package.dev-dependencies]
@@ -19,7 +19,7 @@ hf = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "polars-fastembed", editable = "../polars-fastembed" }]
+requires-dist = [{ name = "polars-fastembed", extras = ["cuda"], editable = "../polars-fastembed" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pdbpp", specifier = ">=0.11.7" }]
@@ -276,11 +276,16 @@ wheels = [
 
 [[package]]
 name = "polars-fastembed"
-version = "0.1.6"
+version = "0.1.15"
 source = { editable = "../polars-fastembed" }
 dependencies = [
     { name = "polars" },
     { name = "polars-distance" },
+]
+
+[package.optional-dependencies]
+cuda = [
+    { name = "polars-fastembed-cuda" },
 ]
 
 [package.metadata]
@@ -302,6 +307,14 @@ test = [
     { name = "inline-snapshot", specifier = ">=0.31.1" },
     { name = "numpy", specifier = ">=2.0.2" },
     { name = "pytest", specifier = ">=8.4.1" },
+]
+
+[[package]]
+name = "polars-fastembed-cuda"
+version = "0.1.14"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/d0/9692e18f812716fad0a6f8e7a2887ee4c239c2909b3f53f8f63b9385f426/polars_fastembed_cuda-0.1.14-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:6b3070907ff3a0406d02f6ae3e18355cefbcf9609cead1e60df4be17c0bb07a0", size = 40270393, upload-time = "2025-12-24T01:19:19.332Z" },
 ]
 
 [[package]]

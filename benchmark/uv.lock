@@ -293,8 +293,8 @@ requires-dist = [
     { name = "polars", specifier = ">=1.36.0" },
     { name = "polars", extras = ["rtcompat"], marker = "extra == 'polars-lts-cpu'" },
     { name = "polars-distance", specifier = ">=0.5.3" },
-    { name = "polars-fastembed-cpu", marker = "extra == 'cpu'", specifier = ">=0.1.5" },
-    { name = "polars-fastembed-cuda", marker = "extra == 'cuda'", specifier = ">=0.1.5" },
+    { name = "polars-fastembed-cpu", marker = "extra == 'cpu'", specifier = ">=0.1.14" },
+    { name = "polars-fastembed-cuda", marker = "extra == 'cuda'", specifier = ">=0.1.14" },
 ]
 provides-extras = ["cpu", "cuda", "polars-lts-cpu"]
 

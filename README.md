@@ -16,14 +16,18 @@ This repository contains the Rust implementation of **polars-fastembed**, a Pola
 
 `hyperfine` timings from running the `embed_demo.py` script with `--warmup 10`
 
+- Runs with the `polars_fastembed` venv, it should be synced with the `cpu` extra only (the `cuda`
+  extra will be slightly slower to load)
+- This toy example mainly measures the **minimal** time that we can embed in, not a realistic workload
+
 ```bash
 bash benchmark_embed.sh
 ```
 
 ```py
 Benchmark 1: embed
-  Time (mean ± σ):     692.4 ms ±   4.1 ms    [User: 3526.8 ms, System: 1352.2 ms]
-  Range (min … max):   685.4 ms … 696.9 ms    10 runs
+  Time (mean ± σ):     697.1 ms ±  11.6 ms    [User: 3330.8 ms, System: 1321.1 ms]
+  Range (min … max):   679.1 ms … 718.7 ms    10 runs
 ```
 
 ### Embed + Retrieve
@@ -36,8 +40,8 @@ bash benchmark_embed_and_retrieve.sh
 
 ```py
 Benchmark 1: embed-and-retrieve
-  Time (mean ± σ):     771.6 ms ±  23.6 ms    [User: 4817.7 ms, System: 1314.2 ms]
-  Range (min … max):   725.1 ms … 795.2 ms    10 runs
+  Time (mean ± σ):     752.6 ms ±  12.5 ms    [User: 4648.9 ms, System: 1344.9 ms]
+  Range (min … max):   731.5 ms … 773.5 ms    10 runs
 ````
 
 ### Larger embedding

@@ -10,7 +10,7 @@ import polars as pl
 from polars.api import register_dataframe_namespace
 from polars.plugins import register_plugin_function
 
-from polars_fastembed._ort_loader import configure_ort
+from polars_fastembed._ort_loader import _CUDA_AVAILABLE, configure_ort
 
 # Set ORT_DYLIB_PATH before importing the Rust extension
 configure_ort()
@@ -48,7 +48,10 @@ __all__ = [
     "clear_registry",
     "list_models",
     "S3Config",
+    "CUDA_AVAILABLE",
 ]
+
+CUDA_AVAILABLE: bool = _CUDA_AVAILABLE
 
 DensityType = Literal["tanh", "exp", "cube"]
 
@@ -114,8 +117,43 @@ class S3Config:
         }
 
 
-def register_model(model_name: str, providers: list[str] | None = None) -> None:
-    """Register/load a model into the global registry by name or HF ID."""
+def _build_providers(cuda: bool, cpu: bool) -> list[str]:
+    """Build provider list from boolean flags."""
+    if cuda and not _CUDA_AVAILABLE:
+        raise RuntimeError(
+            "CUDA requested but polars-fastembed-cuda is not installed.\n"
+            "Install via: pip install polars-fastembed[cuda]",
+        )
+    providers = []
+    if cuda:
+        providers.append("CUDAExecutionProvider")
+    if cpu:
+        providers.append("CPUExecutionProvider")
+    if not providers:
+        raise ValueError(
+            "At least one provider must be enabled (cuda=True or cpu=True)",
+        )
+    return providers
+
+
+def register_model(
+    model_name: str,
+    *,
+    cuda: bool = _CUDA_AVAILABLE,
+    cpu: bool = True,
+) -> None:
+    """Register/load a model into the global registry.
+
+    Args:
+        model_name: Model name or HuggingFace ID.
+        cuda: Use CUDA GPU acceleration. Default: True if available.
+        cpu: Use CPU provider (as primary or fallback). Default: True.
+
+    Raises:
+        RuntimeError: If cuda=True but CUDA provider not installed/available.
+        ValueError: If both cuda=False and cpu=False.
+    """
+    providers = _build_providers(cuda, cpu)
     _register_model(model_name, providers)
 
 

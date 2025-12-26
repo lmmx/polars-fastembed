@@ -10,7 +10,7 @@ from polars_fastembed import register_model
 @pytest.fixture(scope="module")
 def model_id():
     model = "Xenova/bge-small-en-v1.5"
-    register_model(model, providers=["CPUExecutionProvider"])
+    register_model(model)
     return model
 
 

@@ -26,6 +26,7 @@ Change the `[cpu]` package extras according to your system:
 - Embed from a DataFrame by specifying the source column(s)
 - Re-order/filter rows by semantic similarity to a query
 - Efficiently reuse loaded models via a global registry (no repeated model loads)
+- Auto-detects GPU availability; uses CUDA if installed, otherwise CPU
 
 ## Demo
 
@@ -33,7 +34,7 @@ See [demo.py](https://github.com/lmmx/polars-fastembed/tree/master/polars-fastem
 
 ```py
 import polars as pl
-from polars_fastembed import register_model
+from polars_fastembed import register_model, CUDA_AVAILABLE
 
 # Create a sample DataFrame
 df = pl.DataFrame(
@@ -50,9 +51,12 @@ df = pl.DataFrame(
 model_id = "Xenova/bge-small-en-v1.5"
 
 # 1) Register a model
-#    Optionally specify GPU: providers=["CUDAExecutionProvider"]
-#    Or omit it for CPU usage
-register_model(model_id, providers=["CPUExecutionProvider"])
+#    By default, uses GPU if available, otherwise CPU
+register_model(model_id)
+
+#    Or explicitly control providers:
+#    register_model(model_id, cuda=False)        # Force CPU only
+#    register_model(model_id, cuda=True)         # Require GPU (error if unavailable)
 
 # 2) Embed your text
 df_emb = df.fastembed.embed(
@@ -62,6 +66,7 @@ df_emb = df.fastembed.embed(
 )
 
 # Inspect embeddings
+print(f"CUDA available: {CUDA_AVAILABLE}")
 print(df_emb)
 
 # 3) Perform retrieval

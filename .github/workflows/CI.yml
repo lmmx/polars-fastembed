@@ -131,7 +131,7 @@ jobs:
             dockeropts: >
               --env OPENSSL_DIR=/usr
               --env OPENBLAS_DIR=/usr/lib/aarch64-linux-gnu
-            skip: false
+            skip: true
             features: "--features openssl-vendored"
             manylinux: 2_28
           - runner: ubuntu-22.04

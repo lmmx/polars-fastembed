@@ -13,14 +13,13 @@ A Polars plugin for embedding DataFrames
 ## Installation
 
 ```bash
-uv pip install polars-fastembed
+uv pip install polars-fastembed[cpu]
 ```
 
-Or for backcompatibility with older CPUs:
+Change the `[cpu]` package extras according to your system:
 
-```bash
-uv pip install polars-fastembed[rtcompat]
-```
+- for use with GPU: `[cuda]`
+- for backcompatibility with older CPUs: `[rtcompat]`
 
 ## Features
 

@@ -26,20 +26,20 @@ jobs:
   check-commit:
     runs-on: ubuntu-latest
     # This job only runs if the commit message meets the condition
-    if: >
-      (
-        (
-          (github.event_name == 'push')
-          || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx')
-        )
-        &&
-        (
-          startsWith(github.event.head_commit.message, 'chore(release)') ||
-          contains(github.event.head_commit.message, 'cibuildwheel')
-        )
-      )
-      || (github.event_name == 'workflow_dispatch')
-      || (github.event_name == 'workflow_run')
+    # if: >
+    #   (
+    #     (
+    #       (github.event_name == 'push')
+    #       || (github.event_name == 'pull_request' && github.event.pull_request.user.login == 'lmmx')
+    #     )
+    #     &&
+    #     (
+    #       startsWith(github.event.head_commit.message, 'chore(release)') ||
+    #       contains(github.event.head_commit.message, 'cibuildwheel')
+    #     )
+    #   )
+    #   || (github.event_name == 'workflow_dispatch')
+    #   || (github.event_name == 'workflow_run')
     steps:
       - name: Confirm commit message matched
         run: echo "Commit message matched the condition."
@@ -63,6 +63,7 @@ jobs:
             before: |
               yum install \
                 openssl-devel.i686 \
+                openblas-devel.i686 \
                 pkg-config \
                 glibc-devel.i686 \
                 libstdc++-devel.i686 \
@@ -124,10 +125,13 @@ jobs:
           - runner: ubuntu-22.04
             target: aarch64
             before: |
+              sudo dpkg --add-architecture arm64 && \
               sudo apt-get update -y && \
-              sudo apt-get install pkg-config libssl-dev -y
-            dockeropts: --env OPENSSL_DIR=/usr
-            skip: false
+              sudo apt-get install pkg-config libssl-dev gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libopenblas-dev:arm64 -y
+            dockeropts: >
+              --env OPENSSL_DIR=/usr
+              --env OPENBLAS_DIR=/usr/lib/aarch64-linux-gnu
+            skip: true
             features: "--features openssl-vendored"
             manylinux: 2_28
           - runner: ubuntu-22.04
@@ -411,6 +415,8 @@ jobs:
             features: ""
     steps:
       - uses: actions/checkout@v6
+      - name: Install OpenBLAS
+        run: brew install openblas
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x

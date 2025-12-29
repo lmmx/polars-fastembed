@@ -88,7 +88,7 @@ jobs:
         run: just check-wheel-size polars-fastembed-cpu/dist
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-cpu-${{ matrix.platform }}
           path: polars-fastembed-cpu/dist/*.whl
@@ -151,7 +151,7 @@ jobs:
         run: just check-wheel-size polars-fastembed-cuda/dist
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: wheels-cuda-${{ matrix.platform }}
           path: polars-fastembed-cuda/dist/*.whl

@@ -9,6 +9,11 @@ dev = [
 hf = [
   "transformers>=4.57.3"
 ]
+id = [
+  "datasets>=4.4.2",
+  "numpy>=2.3.5",
+  "scikit-learn>=1.8.0"
+]
 
 [project]
 name = "benchmark"
@@ -27,9 +32,17 @@ dependencies = [
 benchmark = "benchmark:main"
 count-pep-tokens = "benchmark.tokens:count_pep_tokens"
 prepare-peps = "benchmark.parquet:prepare_parquet"
+estimate-id = "benchmark.intrinsic_dim:estimate_intrinsic_dim"
+estimate-wiki-id = "benchmark.intrinsic_dim:estimate_wikipedia_id"
+estimate-revs-id = "benchmark.intrinsic_dim:estimate_reviews_id"
+estimate-dups-id = "benchmark.intrinsic_dim:estimate_degenerate_id"
+estimate-news-id = "benchmark.intrinsic_dim:estimate_news_id"
+estimate-poems-id = "benchmark.intrinsic_dim:estimate_poems_id"
+estimate-code-id = "benchmark.intrinsic_dim:estimate_code_id"
+estimate-legal-id = "benchmark.intrinsic_dim:estimate_legal_id"
 
 [tool.uv]
-default-groups = ["dev", "hf"]
+default-groups = ["dev", "hf", "id"]
 
 [tool.uv.sources]
 polars-fastembed = {path = "../polars-fastembed", editable = true}

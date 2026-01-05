@@ -43,7 +43,7 @@ news articles, poems, code (Python), and US Supreme Court legal documents.
 | **Near-duplicates** | 0.2 | 0.2 | — |
 | **PEPs** | 16.1 | 19.9 | +3.8 |
 | **AG News** | 19.5 | 22.5 | +3.0 |
-| **Amazon Reviews** | 22.0 | 19.2* | -2.8 |
+| **Amazon Reviews** | 22.0 | 19.2 | -2.8 |
 | **Poetry** | 21.3 | 24.6 | +3.3 |
 | **Python Code** | 20.9 | 25.3 | +4.4 |
 | **US Supreme Court** | 23.0 | 28.4 | +5.4 |

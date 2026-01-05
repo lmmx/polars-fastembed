@@ -117,10 +117,7 @@ name = "benchmark"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "datasets" },
-    { name = "numpy" },
     { name = "polars-fastembed", extra = ["cuda"] },
-    { name = "scikit-learn" },
 ]
 
 [package.dev-dependencies]
@@ -130,18 +127,23 @@ dev = [
 hf = [
     { name = "transformers" },
 ]
+id = [
+    { name = "datasets" },
+    { name = "numpy" },
+    { name = "scikit-learn" },
+]
 
 [package.metadata]
-requires-dist = [
-    { name = "datasets", specifier = ">=4.4.2" },
-    { name = "numpy", specifier = ">=2.3.5" },
-    { name = "polars-fastembed", extras = ["cuda"], editable = "../polars-fastembed" },
-    { name = "scikit-learn", specifier = ">=1.8.0" },
-]
+requires-dist = [{ name = "polars-fastembed", extras = ["cuda"], editable = "../polars-fastembed" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pdbpp", specifier = ">=0.11.7" }]
 hf = [{ name = "transformers", specifier = ">=4.57.3" }]
+id = [
+    { name = "datasets", specifier = ">=4.4.2" },
+    { name = "numpy", specifier = ">=2.3.5" },
+    { name = "scikit-learn", specifier = ">=1.8.0" },
+]
 
 [[package]]
 name = "certifi"

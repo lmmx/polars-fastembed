@@ -9,6 +9,11 @@ dev = [
 hf = [
   "transformers>=4.57.3"
 ]
+id = [
+  "datasets>=4.4.2",
+  "numpy>=2.3.5",
+  "scikit-learn>=1.8.0"
+]
 
 [project]
 name = "benchmark"
@@ -20,10 +25,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-  "datasets>=4.4.2",
-  "numpy>=2.3.5",
-  "polars-fastembed[cuda]>=0.1.15",
-  "scikit-learn>=1.8.0"
+  "polars-fastembed[cuda]>=0.1.15"
 ]
 
 [project.scripts]
@@ -40,7 +42,7 @@ estimate-code-id = "benchmark.intrinsic_dim:estimate_code_id"
 estimate-legal-id = "benchmark.intrinsic_dim:estimate_legal_id"
 
 [tool.uv]
-default-groups = ["dev", "hf"]
+default-groups = ["dev", "hf", "id"]
 
 [tool.uv.sources]
 polars-fastembed = {path = "../polars-fastembed", editable = true}

@@ -333,7 +333,7 @@ jobs:
             manylinux: auto
     steps:
       - uses: actions/checkout@v6
-      - uses: rui314/setup-mold@725a8794d15fc7563f59595bd9556495c0564878 # v1
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           key: ${{ runner.os }}-${{ matrix.platform.target }}-manylinux
@@ -376,7 +376,7 @@ jobs:
             features: ""
     steps:
       - uses: actions/checkout@v6
-      - uses: rui314/setup-mold@725a8794d15fc7563f59595bd9556495c0564878 # v1
+      - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           key: ${{ runner.os }}-${{ matrix.platform.target }}

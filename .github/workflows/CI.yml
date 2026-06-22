@@ -332,7 +332,7 @@ jobs:
             features: "--features openssl-vendored"
             manylinux: auto
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: rui314/setup-mold@725a8794d15fc7563f59595bd9556495c0564878 # v1
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
@@ -375,7 +375,7 @@ jobs:
             skip: true
             features: ""
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: rui314/setup-mold@725a8794d15fc7563f59595bd9556495c0564878 # v1
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
@@ -414,7 +414,7 @@ jobs:
             skip: false
             features: ""
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install OpenBLAS
         run: brew install openblas
       - uses: actions/setup-python@v6
@@ -438,7 +438,7 @@ jobs:
     needs: [check-commit]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:

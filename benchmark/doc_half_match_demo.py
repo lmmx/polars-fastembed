@@ -1,10 +1,9 @@
 """Half-document retrieval benchmark on the PEP corpus."""
 
 import polars as pl
-from polars_fastembed import register_model
-
 from benchmark.dataset import load_peps
 from benchmark.schema import EMB_COL, TEXT_COL
+from polars_fastembed import register_model
 
 DEFAULT_MODEL_ID = "Xenova/all-MiniLM-L6-v2"
 

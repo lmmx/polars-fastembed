@@ -1,4 +1,3 @@
-# ruff: noqa: E402
 from __future__ import annotations
 
 import inspect
@@ -43,12 +42,12 @@ else:
     lib = Path(__file__).parent
 
 __all__ = [
-    "embed_text",
-    "register_model",
-    "clear_registry",
-    "list_models",
-    "S3Config",
     "CUDA_AVAILABLE",
+    "S3Config",
+    "clear_registry",
+    "embed_text",
+    "list_models",
+    "register_model",
 ]
 
 CUDA_AVAILABLE: bool = _CUDA_AVAILABLE

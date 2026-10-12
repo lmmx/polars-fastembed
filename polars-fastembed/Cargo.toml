@@ -1,15 +1,15 @@
 [dependencies]
-pyo3 = {version = "0.23.4", features = ["extension-module", "abi3-py38"]}
-polars = {version = "0.46.0", default-features = false, features = ["dtype-array"]}
-polars-arrow = {version = "0.46.0", default-features = false}
-pyo3-polars = {version = "0.20.0", features = ["derive"]}
-serde = {version = "1.0", features = ["derive"]}
-fastembed = {version = "5", default-features = false, features = ["ort-load-dynamic", "hf-hub-native-tls"]}
+pyo3 = { version = "0.23.4", features = ["extension-module", "abi3-py38"] }
+polars = { version = "0.46.0", default-features = false, features = ["dtype-array"] }
+polars-arrow = { version = "0.46.0", default-features = false }
+pyo3-polars = { version = "0.20.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+fastembed = { version = "5", default-features = false, features = ["ort-load-dynamic", "hf-hub-native-tls"] }
 once_cell = "1.20.3"
 # For aarch64 CI building: https://github.com/PyO3/maturin-action/discussions/162#discussioncomment-7978369
-openssl = {version = "0.10", features = ["vendored"], optional = true}
-openssl-probe = {version = "0.1", optional = true}
-ort = {version = "2.0.0-rc.5", default-features = false, optional = true}
+openssl = { version = "0.10", features = ["vendored"], optional = true }
+openssl-probe = { version = "0.1", optional = true }
+ort = { version = "2.0.0-rc.5", default-features = false, optional = true }
 ndarray = "0.17"
 
 [features]
@@ -44,4 +44,4 @@ strip = "symbols"
 picard-ica = "0.1.6"
 
 [target.'cfg(windows)'.dependencies]
-picard-ica = {version = "0.1.6", default-features = false, features = ["intel-mkl"]}
+picard-ica = { version = "0.1.6", default-features = false, features = ["intel-mkl"] }

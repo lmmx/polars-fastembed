@@ -21,7 +21,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-  {name = "Louis Maddox", email = "louismmx@gmail.com"}
+  { name = "Louis Maddox", email = "louismmx@gmail.com" }
 ]
 requires-python = ">=3.13"
 dependencies = [
@@ -45,4 +45,4 @@ estimate-legal-id = "benchmark.intrinsic_dim:estimate_legal_id"
 default-groups = ["dev", "hf", "id"]
 
 [tool.uv.sources]
-polars-fastembed = {path = "../polars-fastembed", editable = true}
+polars-fastembed = { path = "../polars-fastembed", editable = true }
